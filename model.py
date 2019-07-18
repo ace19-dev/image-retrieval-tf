@@ -94,7 +94,7 @@ def deep_cosine_metric_learning(inputs,
         ###############################
         # deep cosine metric learning
         ###############################
-        # (?,7,7,512)
+        # (?,7,7,2048)
         feature_dim = net.get_shape().as_list()[-1]
         net = slim.flatten(net)
         net = slim.dropout(net, keep_prob=keep_prob)
