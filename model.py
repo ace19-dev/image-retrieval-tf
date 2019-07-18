@@ -8,14 +8,13 @@ from nets import resnet_v2
 
 slim = tf.contrib.slim
 
-
 batch_norm_params = {
-  'decay': 0.997,    # batch_norm_decay
-  'epsilon': 1e-5,   # batch_norm_epsilon
-  'scale': True,     # batch_norm_scale
-  'updates_collections': tf.GraphKeys.UPDATE_OPS,    # batch_norm_updates_collections
-  'is_training': True,  # is_training
-  'fused': None,  # Use fused batch norm if possible.
+    'decay': 0.997,  # batch_norm_decay
+    'epsilon': 1e-5,  # batch_norm_epsilon
+    'scale': True,  # batch_norm_scale
+    'updates_collections': tf.GraphKeys.UPDATE_OPS,  # batch_norm_updates_collections
+    'is_training': True,  # is_training
+    'fused': None,  # Use fused batch norm if possible.
 }
 
 
@@ -33,10 +32,10 @@ def basic_model(inputs,
     with slim.arg_scope(resnet_v2.resnet_arg_scope()):
         net, end_points = \
             resnet_v2.resnet_v2_50(inputs,
-                                    num_classes=num_classes,
-                                    is_training=is_training,
-                                    attention_module=attention_module,
-                                    scope='resnet_v2_50')
+                                   num_classes=num_classes,
+                                   is_training=is_training,
+                                   attention_module=attention_module,
+                                   scope='resnet_v2_50')
 
     # out1 = GlobalMaxPooling2D()(x)
     net1 = tf.reduce_max(net, axis=[1, 2], keep_dims=True, name='GlobalMaxPooling2D')
@@ -69,6 +68,7 @@ def basic_model(inputs,
                                   num_classes,
                                   activation_fn=None,
                                   scope='logits')
+
 
     return logits, end_points
 
