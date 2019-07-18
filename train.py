@@ -216,7 +216,7 @@ def main(unused_argv):
         # optimize = optimizer.apply_gradients(zip(gradients, grads_and_vars[1]))
 
         # TensorBoard: How to plot histogram for gradients
-        grad_summ_op = tf.summary.merge([tf.summary.histogram("%s-grad" % g[1].name, g[0]) for g in grads_and_vars])
+        # grad_summ_op = tf.summary.merge([tf.summary.histogram("%s-grad" % g[1].name, g[0]) for g in grads_and_vars])
 
         # Create gradient update op.
         grad_updates = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
@@ -323,8 +323,8 @@ def main(unused_argv):
                     #     cv2.destroyAllWindows()
 
                     # Run the graph with this batch of training data and learning rate policy.
-                    lr, train_summary, train_accuracy, train_loss, grad_vals, _ = \
-                        sess.run([learning_rate, summary_op, accuracy, total_loss, grad_summ_op, train_op],
+                    lr, train_summary, train_accuracy, train_loss, _ = \
+                        sess.run([learning_rate, summary_op, accuracy, total_loss, train_op],
                                  feed_dict={
                                      X: augmented_batch_xs,
                                      ground_truth: train_batch_ys,
@@ -332,7 +332,7 @@ def main(unused_argv):
                                      keep_prob: 0.8
                                  })
                     train_writer.add_summary(train_summary, num_epoch)
-                    train_writer.add_summary(grad_vals, num_epoch)
+                    # train_writer.add_summary(grad_vals, num_epoch)
                     tf.logging.info('Epoch #%d, Step #%d, rate %.10f, accuracy %.1f%%, loss %f' %
                                     (num_epoch, step, lr, train_accuracy * 100, train_loss))
 
