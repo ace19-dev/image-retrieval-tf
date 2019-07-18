@@ -142,13 +142,19 @@ def main(unused_argv):
                                                keep_prob=keep_prob,
                                                attention_module='se_block')
 
+        # logits, features = model.deep_cosine_metric_learning(X,
+        #                                                      num_classes=num_classes,
+        #                                                      is_training=is_training,
+        #                                                      keep_prob=keep_prob,
+        #                                                      attention_module='se_block')
+
 
         # Print name and shape of each tensor.
-        tf.logging.info("++++++++++++++++++++++++++++++++++")
-        tf.logging.info("Layers")
-        tf.logging.info("++++++++++++++++++++++++++++++++++")
-        for k, v in end_points.items():
-            tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+        # tf.logging.info("++++++++++++++++++++++++++++++++++")
+        # tf.logging.info("Layers")
+        # tf.logging.info("++++++++++++++++++++++++++++++++++")
+        # for k, v in end_points.items():
+        #     tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
         # # Print name and shape of parameter nodes  (values not yet initialized)
         # tf.logging.info("++++++++++++++++++++++++++++++++++")
