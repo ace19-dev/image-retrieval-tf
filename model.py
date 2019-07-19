@@ -37,37 +37,39 @@ def basic_model(inputs,
                                    attention_module=attention_module,
                                    scope='resnet_v2_50')
 
-    # out1 = GlobalMaxPooling2D()(x)
-    net1 = tf.reduce_max(net, axis=[1, 2], keep_dims=True, name='GlobalMaxPooling2D')
-    # out2 = GlobalAveragePooling2D()(x)
-    net2 = tf.reduce_mean(net, axis=[1, 2], keep_dims=True, name='GlobalAveragePooling2D')
-    # out3 = Flatten()(x)
-    # net3 = slim.flatten(net)
-    # out = Concatenate(axis=-1)([out1, out2, out3])
-    net = tf.concat([net1, net2], axis=-1)
-    net = tf.squeeze(net, [1, 2], name='SpatialSqueeze')
+    # # out1 = GlobalMaxPooling2D()(x)
+    # net1 = tf.reduce_max(net, axis=[1, 2], keep_dims=True, name='GlobalMaxPooling2D')
+    # # out2 = GlobalAveragePooling2D()(x)
+    # net2 = tf.reduce_mean(net, axis=[1, 2], keep_dims=True, name='GlobalAveragePooling2D')
+    # # out3 = Flatten()(x)
+    # # net3 = slim.flatten(net)
+    # # out = Concatenate(axis=-1)([out1, out2, out3])
+    # net = tf.concat([net1, net2], axis=-1)
+    # net = tf.squeeze(net, [1, 2], name='SpatialSqueeze')
+    #
+    # batch_norm_params['is_training'] = is_training
+    #
+    # # out = Dropout(0.5)(out)
+    # net = slim.dropout(net, keep_prob=keep_prob, is_training=is_training)
+    # # out = Dense(1, activation="sigmoid", name="3_")(out)
+    # net = slim.fully_connected(net,
+    #                            768,
+    #                            normalizer_fn=slim.batch_norm,
+    #                            normalizer_params=batch_norm_params,
+    #                            scope='fc1')
+    # net = slim.dropout(net, keep_prob=keep_prob, is_training=is_training)
+    # net = slim.fully_connected(net,
+    #                            256,
+    #                            normalizer_fn=slim.batch_norm,
+    #                            normalizer_params=batch_norm_params,
+    #                            scope='fc2')
+    # net = slim.dropout(net, keep_prob=keep_prob, is_training=is_training)
+    # logits = slim.fully_connected(net,
+    #                               num_classes,
+    #                               activation_fn=None,
+    #                               scope='logits')
 
-    batch_norm_params['is_training'] = is_training
-
-    # out = Dropout(0.5)(out)
-    net = slim.dropout(net, keep_prob=keep_prob, is_training=is_training)
-    # out = Dense(1, activation="sigmoid", name="3_")(out)
-    net = slim.fully_connected(net,
-                               768,
-                               normalizer_fn=slim.batch_norm,
-                               normalizer_params=batch_norm_params,
-                               scope='fc1')
-    net = slim.dropout(net, keep_prob=keep_prob, is_training=is_training)
-    net = slim.fully_connected(net,
-                               256,
-                               normalizer_fn=slim.batch_norm,
-                               normalizer_params=batch_norm_params,
-                               scope='fc2')
-    net = slim.dropout(net, keep_prob=keep_prob, is_training=is_training)
-    logits = slim.fully_connected(net,
-                                  num_classes,
-                                  activation_fn=None,
-                                  scope='logits')
+    logits = net
 
 
     return logits, end_points
