@@ -129,7 +129,7 @@ def main(unused_argv):
     with tf.Graph().as_default() as graph:
         global_step = tf.compat.v1.train.get_or_create_global_step()
 
-        X = tf.compat.v1.placeholder(tf.float32, [None, FLAGS.height, FLAGS.width, 1], name='X')
+        X = tf.compat.v1.placeholder(tf.float32, [None, FLAGS.height, FLAGS.width, 3], name='X')
         ground_truth = tf.compat.v1.placeholder(tf.int64, [None], name='ground_truth')
         is_training = tf.compat.v1.placeholder(tf.bool, name='is_training')
         keep_prob = tf.compat.v1.placeholder(tf.float32, [], name='keep_prob')
