@@ -77,6 +77,10 @@ def aug(images):
 
         # iaa.AdditiveGaussianNoise(scale=0.1*255),
 
+        # Normalize
+        iaa.MultiplyElementwise((1./255), per_channel=True),
+        iaa.AddElementwise(-0.5)
+
     ], random_order=True)  # apply augmenters in random order
 
     images_aug = seq.augment_images(images)
