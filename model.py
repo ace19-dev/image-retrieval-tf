@@ -12,7 +12,7 @@ batch_norm_params = {
     'decay': 0.997,  # batch_norm_decay
     'epsilon': 1e-5,  # batch_norm_epsilon
     'scale': True,  # batch_norm_scale
-    'updates_collections': tf.GraphKeys.UPDATE_OPS,  # batch_norm_updates_collections
+    'updates_collections': tf.compat.v1.GraphKeys.UPDATE_OPS,  # batch_norm_updates_collections
     'is_training': True,  # is_training
     'fused': None,  # Use fused batch norm if possible.
 }

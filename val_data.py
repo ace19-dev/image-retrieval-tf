@@ -15,8 +15,6 @@ class Dataset(object):
     """
 
     def __init__(self, tfrecord_path, batch_size, height, width):
-        # self.original_size = 96
-
         self.resize_h = height
         self.resize_w = width
 
@@ -28,7 +26,7 @@ class Dataset(object):
         # of the dataset.
         dataset = dataset.map(self.decode, num_parallel_calls=8)
         # dataset = dataset.map(self.augment, num_parallel_calls=8)
-        # dataset = dataset.map(self.normalize, num_parallel_calls=8)
+        dataset = dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
         # files for shuffling and processing.
@@ -40,21 +38,21 @@ class Dataset(object):
 
     def decode(self, serialized_example):
         """Parses an image and label from the given `serialized_example`."""
-        features = tf.parse_single_example(
+        features = tf.io.parse_single_example(
             serialized_example,
             # Defaults are not specified since both keys are required.
             features={
                 # 'image/filename': tf.FixedLenFeature([], tf.string),
-                'image/encoded': tf.FixedLenFeature([], tf.string),
-                'image/label': tf.FixedLenFeature([], tf.int64),
+                'image/encoded': tf.io.FixedLenFeature([], tf.string),
+                'image/class/label': tf.io.FixedLenFeature([], tf.int64),
             })
 
         # Convert from a scalar string tensor to a float32 tensor with shape
         image_decoded = tf.image.decode_png(features['image/encoded'], channels=3)
-        image = tf.image.resize_images(image_decoded, [self.resize_h, self.resize_w])
+        image = tf.image.resize(image_decoded, [self.resize_h, self.resize_w])
 
         # Convert label from a scalar uint8 tensor to an int32 scalar.
-        label = tf.cast(features['image/label'], tf.int64)
+        label = tf.cast(features['image/class/label'], tf.int64)
 
         return image, label
 

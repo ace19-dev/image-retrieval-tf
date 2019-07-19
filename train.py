@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import cv2
 
 import numpy as np
 import tensorflow as tf
@@ -21,11 +22,11 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 # temporary constant
-TRAIN_DATA_SIZE = 7512+6180+6864+4020+10668+5580+8160+4704+4128+5700 # 63516
-VALIDATE_DATA_SIZE = 12000
+TRAIN_DATA_SIZE = 2400+2400+2052+2400+2772+2880+1956+3204   # 20064
+VALIDATE_DATA_SIZE = 1032+1032+1200+1032+1200+1200+240+1200     # 8136
 
 
-flags.DEFINE_string('train_logdir', './models',
+flags.DEFINE_string('train_logdir', './tfmodels',
                     'Where the checkpoint and logs are stored.')
 flags.DEFINE_string('ckpt_name_to_save', 'resnet_v2_50.ckpt',
                     'Name to save checkpoint file')
@@ -36,12 +37,12 @@ flags.DEFINE_integer('save_interval_secs', 1200,
 flags.DEFINE_boolean('save_summaries_images', False,
                      'Save sample inputs, labels, and semantic predictions as '
                      'images to summary.')
-flags.DEFINE_string('summaries_dir', './models/train_logs',
+flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
                      'Where to save summary logs for TensorBoard.')
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', .001,
+flags.DEFINE_float('base_learning_rate', .0005,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -64,12 +65,12 @@ flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
 flags.DEFINE_integer('slow_start_step', TRAIN_DATA_SIZE * 2,
                      'Training model with small learning rate for few steps.')
-flags.DEFINE_float('slow_start_learning_rate', .0001,
+flags.DEFINE_float('slow_start_learning_rate', .00005,
                    'Learning rate employed during slow start.')
 
 # Settings for fine-tuning the network.
 flags.DEFINE_string('saved_checkpoint_dir',
-                    # './models',
+                    # './tfmodels',
                     None,
                     'Saved checkpoint dir.')
 flags.DEFINE_string('pre_trained_checkpoint',
@@ -99,17 +100,17 @@ flags.DEFINE_boolean('ignore_missing_vars',
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/modelnet10_s',
+                    '/home/ace19/dl_data/modelnet8_sv',
                     'Where the dataset reside.')
 
 flags.DEFINE_integer('how_many_training_epochs', 50,
                      'How many training loops to run')
-flags.DEFINE_integer('batch_size', 32, 'batch size')
-flags.DEFINE_integer('val_batch_size', 32, 'validation batch size')
+flags.DEFINE_integer('batch_size', 64, 'batch size')
+flags.DEFINE_integer('val_batch_size', 64, 'validation batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
 flags.DEFINE_string('labels',
-                    'airplane,bed,bookshelf,bottle,chair,monitor,sofa,table,toilet,vase',
+                    'desk,dresser,glass_box,night_stand,piano,plant,tent,tv_stand',
                     'Labels to use')
 
 # # Test Time Augmentation
@@ -118,21 +119,20 @@ flags.DEFINE_integer('verification_cycle', 5, 'Number of verification cycle')
 
 
 def main(unused_argv):
-    tf.logging.set_verbosity(tf.logging.INFO)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
     labels = FLAGS.labels.split(',')
     num_classes = len(labels)
 
-    tf.gfile.MakeDirs(FLAGS.train_logdir)
-    tf.logging.info('Creating train logdir: %s', FLAGS.train_logdir)
+    tf.compat.v1.logging.info('Creating train logdir: %s', FLAGS.train_logdir)
 
     with tf.Graph().as_default() as graph:
-        global_step = tf.train.get_or_create_global_step()
+        global_step = tf.compat.v1.train.get_or_create_global_step()
 
-        X = tf.placeholder(tf.float32, [None, FLAGS.height, FLAGS.width, 3], name='X')
-        ground_truth = tf.placeholder(tf.int64, [None], name='ground_truth')
-        is_training = tf.placeholder(tf.bool, name='is_training')
-        keep_prob = tf.placeholder(tf.float32, [], name='keep_prob')
+        X = tf.compat.v1.placeholder(tf.float32, [None, FLAGS.height, FLAGS.width, 1], name='X')
+        ground_truth = tf.compat.v1.placeholder(tf.int64, [None], name='ground_truth')
+        is_training = tf.compat.v1.placeholder(tf.bool, name='is_training')
+        keep_prob = tf.compat.v1.placeholder(tf.float32, [], name='keep_prob')
         # learning_rate = tf.placeholder(tf.float32, [])
 
         # apply SENet
@@ -164,30 +164,30 @@ def main(unused_argv):
         #     tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
         # Gather initial summaries.
-        summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
+        summaries = set(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
 
         prediction = tf.argmax(logits, axis=1, name='prediction')
         correct_prediction = tf.equal(prediction, ground_truth)
-        confusion_matrix = tf.confusion_matrix(
+        confusion_matrix = tf.math.confusion_matrix(
             ground_truth, prediction, num_classes=num_classes)
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy')
-        summaries.add(tf.summary.scalar('accuracy', accuracy))
+        summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
 
         # Define loss
-        tf.losses.sparse_softmax_cross_entropy(labels=ground_truth,
+        tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=ground_truth,
                                                logits=logits)
 
         # Gather update_ops. These contain, for example,
         # the updates for the batch_norm variables created by model.
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
 
         # # Add summaries for model variables.
         # for model_var in slim.get_model_variables():
         #     summaries.add(tf.summary.histogram(model_var.op.name, model_var))
 
         # Add summaries for losses.
-        for loss in tf.get_collection(tf.GraphKeys.LOSSES):
-            summaries.add(tf.summary.scalar('losses/%s' % loss.op.name, loss))
+        for loss in tf.compat.v1.get_collection(tf.GraphKeys.LOSSES):
+            summaries.add(tf.compat.v1.summary.scalar('losses/%s' % loss.op.name, loss))
 
         learning_rate = train_utils.get_model_learning_rate(
             FLAGS.learning_policy, FLAGS.base_learning_rate,
@@ -195,15 +195,15 @@ def main(unused_argv):
             FLAGS.training_number_of_steps, FLAGS.learning_power,
             FLAGS.slow_start_step, FLAGS.slow_start_learning_rate)
         # optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-        summaries.add(tf.summary.scalar('learning_rate', learning_rate))
+        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+        summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
         for variable in slim.get_model_variables():
-            summaries.add(tf.summary.histogram(variable.op.name, variable))
+            summaries.add(tf.compat.v1.summary.histogram(variable.op.name, variable))
 
         total_loss, grads_and_vars = train_utils.optimize(optimizer)
-        total_loss = tf.check_numerics(total_loss, 'Loss is inf or nan.')
-        summaries.add(tf.summary.scalar('total_loss', total_loss))
+        total_loss = tf.compat.v1.check_numerics(total_loss, 'Loss is inf or nan.')
+        summaries.add(tf.compat.v1.summary.scalar('total_loss', total_loss))
 
         # # Modify the gradients for biases and last layer variables.
         # last_layers = train_utils.get_extra_layer_scopes(
@@ -233,18 +233,18 @@ def main(unused_argv):
 
         # Add the summaries. These contain the summaries
         # created by model and either optimize() or _gather_loss().
-        summaries |= set(tf.get_collection(tf.GraphKeys.SUMMARIES))
+        summaries |= set(tf.compat.v1.get_collection(tf.GraphKeys.SUMMARIES))
 
         # Merge all summaries together.
-        summary_op = tf.summary.merge(list(summaries))
-        train_writer = tf.summary.FileWriter(FLAGS.summaries_dir, graph)
-        validation_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/validation', graph)
+        summary_op = tf.compat.v1.summary.merge(list(summaries))
+        train_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir, graph)
+        validation_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/validation', graph)
 
         ###############
         # Prepare data
         ###############
         # training dateset
-        tfrecord_filenames = tf.placeholder(tf.string, shape=[])
+        tfrecord_filenames = tf.compat.v1.placeholder(tf.string, shape=[])
         dataset = data.Dataset(tfrecord_filenames,
                                FLAGS.batch_size,
                                FLAGS.how_many_training_epochs,
@@ -261,12 +261,12 @@ def main(unused_argv):
         val_iterator = val_dataset.dataset.make_initializable_iterator()
         val_next_batch = val_iterator.get_next()
 
-        sess_config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
-        with tf.Session(config = sess_config) as sess:
+        sess_config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
+        with tf.compat.v1.Session(config = sess_config) as sess:
             sess.run(tf.global_variables_initializer())
 
             # Create a saver object which will save all the variables
-            saver = tf.train.Saver()
+            saver = tf.compat.v1.train.Saver()
             if FLAGS.saved_checkpoint_dir:
                 if tf.gfile.IsDirectory(FLAGS.train_logdir):
                     checkpoint_path = tf.train.latest_checkpoint(FLAGS.train_logdir)
@@ -323,7 +323,7 @@ def main(unused_argv):
                     #     img = augmented_batch_xs[i]
                     #     # scipy.misc.toimage(img).show() Or
                     #     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
-                    #     cv2.imwrite('/home/ace19/Pictures/' + str(i) + '.png', img)
+                    #     cv2.imwrite('/home/ace19/Pictures/aug/' + str(i) + '.png', img)
                     #     # cv2.imshow(str(train_batch_ys[idx]), img)
                     #     cv2.waitKey(100)
                     #     cv2.destroyAllWindows()
@@ -411,4 +411,8 @@ def main(unused_argv):
 
 
 if __name__ == '__main__':
-    tf.app.run()
+    if tf.io.gfile.exists(FLAGS.train_logdir):
+        tf.io.gfile.rmtree(FLAGS.train_logdir)
+    tf.io.gfile.makedirs(FLAGS.train_logdir)
+
+    tf.compat.v1.app.run()

@@ -75,7 +75,7 @@ def aug(images):
         # #    random_order=True
         # # ),
 
-        iaa.AdditiveGaussianNoise(scale=0.1*255),
+        # iaa.AdditiveGaussianNoise(scale=0.1*255),
 
     ], random_order=True)  # apply augmenters in random order
 

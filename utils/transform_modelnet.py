@@ -10,13 +10,13 @@ import tensorflow as tf
 
 flags = tf.app.flags
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/ModelNet10',
-                    'Root Directory to raw modelnet dataset.')
+                    '/home/ace19/dl_data/modelnet10/view/classes',
+                    'Root Directory to modelnet10 dataset.')
 flags.DEFINE_string('output_path',
-                    '/home/ace19/dl_data/modelnet10',
+                    '/home/ace19/dl_data/modelnet10_sv',
                     'Path to output')
 flags.DEFINE_string('dataset_category',
-                    'test',
+                    'train',
                     'dataset category, train|validate|test')
 
 FLAGS = flags.FLAGS
