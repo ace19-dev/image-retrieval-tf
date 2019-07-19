@@ -1,23 +1,26 @@
-#!/usr/bin/python2
+#!/usr/bin/python3.5
 # -*- coding:utf-8 -*-
 # Created Time: Fri 02 Mar 2018 03:58:07 PM CST
 # Purpose: download image
 # Mail: tracyliang18@gmail.com
+# Adapted to python 3 by Aloisio Dourado in Sun Mar 11 2018
 
 # Note to Kagglers: This script will not run directly in Kaggle kernels. You
 # need to download it and run it on your local machine.
 
-# Downloads images from the Google Landmarks dataset using multiple threads.
 # Images that already exist will not be downloaded again, so the script can
 # resume a partially completed download. All images will be saved in the JPG
 # format with 90% compression quality.
 
-import sys, os, multiprocessing, urllib.request, io, csv
+import sys, os, multiprocessing, urllib3
 from PIL import Image
-# from StringIO import StringIO
+from io import BytesIO
 from tqdm  import tqdm
 import json
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+client = urllib3.PoolManager(100)
 
 def ParseData(data_file):
   ann = {}
@@ -39,26 +42,31 @@ def ParseData(data_file):
   return key_url_list
 
 
+
+
 def DownloadImage(key_url):
   out_dir = sys.argv[2]
   (key, url) = key_url
-  filename = os.path.join(out_dir, '%s.png' % key)
+  filename = os.path.join(out_dir, '%s.jpg' % key)
 
   if os.path.exists(filename):
     print('Image %s already exists. Skipping download.' % filename)
     return
 
   try:
-    response = urllib.request.urlopen(url)
-    image_data = response.read()
+    #print('Trying to get %s.' % url)
+    global client
+    # http = urllib3.PoolManager()
+    response = client.request('GET', url, timeout=10)
+    image_data = response.data
   except:
     print('Warning: Could not download image %s from %s' % (key, url))
     return
 
   try:
-    pil_image = Image.open(io.StringIO(image_data))
+    pil_image = Image.open(BytesIO(image_data))
   except:
-    print('Warning: Failed to parse image %s' % key)
+    print('Warning: Failed to parse image %s %s' % (key,url))
     return
 
   try:
@@ -68,8 +76,7 @@ def DownloadImage(key_url):
     return
 
   try:
-    #pil_image_rgb.save(filename, format='JPEG', quality=90)
-    pil_image_rgb.save(filename, format='PNG')
+    pil_image_rgb.save(filename, format='JPEG', quality=90)
   except:
     print('Warning: Failed to save image %s' % filename)
     return
