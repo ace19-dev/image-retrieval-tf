@@ -26,7 +26,7 @@ class Dataset(object):
         # of the dataset.
         dataset = dataset.map(self.decode, num_parallel_calls=8)
         dataset = dataset.map(self.augment, num_parallel_calls=8)
-        dataset = dataset.map(self.normalize, num_parallel_calls=8)
+        # dataset = dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
         # files for shuffling and processing.
@@ -60,14 +60,14 @@ class Dataset(object):
     def augment(self, image, label):
         """Placeholder for data augmentation.
         """
-        image = tf.image.central_crop(image, 0.9)
+        # image = tf.image.central_crop(image, 0.9)
         # image = tf.image.random_flip_up_down(image)
         image = tf.image.random_flip_left_right(image)
         image = tf.image.rot90(image, k=random.randint(0,4))
-        paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
-        image = tf.pad(image, paddings, "CONSTANT")
-        image = tf.image.random_brightness(image, max_delta=0.5)
-        image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+        # paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
+        # image = tf.pad(image, paddings, "CONSTANT")
+        # image = tf.image.random_brightness(image, max_delta=0.5)
+        # image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
         # image = tf.image.random_hue(image, max_delta=0.04)
         # image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
         # image = tf.image.resize_images(image, [self.resize_h, self.resize_w])

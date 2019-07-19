@@ -74,8 +74,8 @@ flags.DEFINE_string('pre_trained_checkpoint',
                     'The pre-trained checkpoint in tensorflow format.')
 flags.DEFINE_string('checkpoint_exclude_scopes',
                     # 'inception_v4/AuxLogits,inception_v4/Logits',
-                    # 'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
-                    None,
+                    'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
+                    # None,
                     'Comma-separated list of scopes of variables to exclude '
                     'when restoring from a checkpoint.')
 flags.DEFINE_string('trainable_scopes',
@@ -195,8 +195,8 @@ def main(unused_argv):
             FLAGS.learning_rate_decay_step, FLAGS.learning_rate_decay_factor,
             FLAGS.training_number_of_steps, FLAGS.learning_power,
             FLAGS.slow_start_step, FLAGS.slow_start_learning_rate)
-        optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
-        # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+        # optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
+        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
         summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
         for variable in slim.get_model_variables():
