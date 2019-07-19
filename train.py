@@ -21,11 +21,6 @@ slim = tf.contrib.slim
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
-# temporary constant
-TRAIN_DATA_SIZE = 2400+2400+2052+2400+2772+2880+1956+3204   # 20064
-VALIDATE_DATA_SIZE = 1032+1032+1200+1032+1200+1200+240+1200     # 8136
-
-
 flags.DEFINE_string('train_logdir', './tfmodels',
                     'Where the checkpoint and logs are stored.')
 flags.DEFINE_string('ckpt_name_to_save', 'resnet_v2_50.ckpt',
@@ -63,9 +58,9 @@ flags.DEFINE_boolean('initialize_last_layer', True,
                      'Initialize the last layer.')
 flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
-flags.DEFINE_integer('slow_start_step', TRAIN_DATA_SIZE * 2,
+flags.DEFINE_integer('slow_start_step', 630,
                      'Training model with small learning rate for few steps.')
-flags.DEFINE_float('slow_start_learning_rate', .00005,
+flags.DEFINE_float('slow_start_learning_rate', .0001,
                    'Learning rate employed during slow start.')
 
 # Settings for fine-tuning the network.
@@ -79,8 +74,8 @@ flags.DEFINE_string('pre_trained_checkpoint',
                     'The pre-trained checkpoint in tensorflow format.')
 flags.DEFINE_string('checkpoint_exclude_scopes',
                     # 'inception_v4/AuxLogits,inception_v4/Logits',
-                    'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
-                    # None,
+                    # 'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
+                    None,
                     'Comma-separated list of scopes of variables to exclude '
                     'when restoring from a checkpoint.')
 flags.DEFINE_string('trainable_scopes',
@@ -118,6 +113,12 @@ flags.DEFINE_integer('num_tta', 5, 'Number of Test Time Augmentation')
 flags.DEFINE_integer('verification_cycle', 5, 'Number of verification cycle')
 
 
+# temporary constant
+TRAIN_DATA_SIZE = 2400+2400+2052+2400+2772+2880+1956+3204   # 20064
+VALIDATE_DATA_SIZE = 1032+1032+1200+1032+1200+1200+240+1200     # 8136
+
+
+
 def main(unused_argv):
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
@@ -150,11 +151,11 @@ def main(unused_argv):
 
 
         # Print name and shape of each tensor.
-        # tf.logging.info("++++++++++++++++++++++++++++++++++")
-        # tf.logging.info("Layers")
-        # tf.logging.info("++++++++++++++++++++++++++++++++++")
-        # for k, v in end_points.items():
-        #     tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+        tf.logging.info("++++++++++++++++++++++++++++++++++")
+        tf.logging.info("Layers")
+        tf.logging.info("++++++++++++++++++++++++++++++++++")
+        for k, v in end_points.items():
+            tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
         # # Print name and shape of parameter nodes  (values not yet initialized)
         # tf.logging.info("++++++++++++++++++++++++++++++++++")
@@ -194,8 +195,8 @@ def main(unused_argv):
             FLAGS.learning_rate_decay_step, FLAGS.learning_rate_decay_factor,
             FLAGS.training_number_of_steps, FLAGS.learning_power,
             FLAGS.slow_start_step, FLAGS.slow_start_learning_rate)
-        # optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
-        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+        optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
+        # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
         summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
         for variable in slim.get_model_variables():
@@ -314,7 +315,7 @@ def main(unused_argv):
                     #     cv2.waitKey(100)
                     #     cv2.destroyAllWindows()
 
-                    augmented_batch_xs = aug_utils.aug(train_batch_xs)
+                    # augmented_batch_xs = aug_utils.aug(train_batch_xs)
                     # # Verify image
                     # # assert not np.any(np.isnan(train_batch_xs))
                     # n_batch = augmented_batch_xs.shape[0]
@@ -332,7 +333,7 @@ def main(unused_argv):
                     lr, train_summary, train_accuracy, train_loss, _ = \
                         sess.run([learning_rate, summary_op, accuracy, total_loss, train_op],
                                  feed_dict={
-                                     X: augmented_batch_xs,
+                                     X: train_batch_xs,
                                      ground_truth: train_batch_ys,
                                      is_training: True,
                                      keep_prob: 0.8
@@ -367,12 +368,12 @@ def main(unused_argv):
                     for step in range(val_batches):
                         validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
                         # random augmentation for TTA
-                        augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
+                        # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
 
                         val_summary, val_accuracy, val_logit, conf_matrix = sess.run(
                             [summary_op, accuracy, logits, confusion_matrix],
                             feed_dict={
-                                X: augmented_val_batch_xs,
+                                X: validation_batch_xs,
                                 ground_truth: validation_batch_ys,
                                 is_training: False,
                                 keep_prob: 1.0

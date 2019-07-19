@@ -25,7 +25,7 @@ class Dataset(object):
         # The map transformation takes a function and applies it to every element
         # of the dataset.
         dataset = dataset.map(self.decode, num_parallel_calls=8)
-        # dataset = dataset.map(self.augment, num_parallel_calls=8)
+        dataset = dataset.map(self.augment, num_parallel_calls=8)
         dataset = dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
@@ -61,7 +61,7 @@ class Dataset(object):
         """Placeholder for data augmentation.
         """
         image = tf.image.central_crop(image, 0.9)
-        image = tf.image.random_flip_up_down(image)
+        # image = tf.image.random_flip_up_down(image)
         image = tf.image.random_flip_left_right(image)
         image = tf.image.rot90(image, k=random.randint(0,4))
         paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
