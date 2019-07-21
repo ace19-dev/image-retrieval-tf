@@ -69,12 +69,12 @@ flags.DEFINE_string('saved_checkpoint_dir',
                     None,
                     'Saved checkpoint dir.')
 flags.DEFINE_string('pre_trained_checkpoint',
-                    './pre-trained/resnet_v2_50.ckpt',
-                    # None,
+                    # './pre-trained/resnet_v2_50.ckpt',
+                    None,
                     'The pre-trained checkpoint in tensorflow format.')
 flags.DEFINE_string('checkpoint_exclude_scopes',
-                    'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
-                    # None,
+                    # 'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
+                    None,
                     'Comma-separated list of scopes of variables to exclude '
                     'when restoring from a checkpoint.')
 flags.DEFINE_string('trainable_scopes',
@@ -228,6 +228,7 @@ def main(unused_argv):
         # validation dateset
         val_dataset = val_data.Dataset(tfrecord_filenames,
                                        FLAGS.val_batch_size,
+                                       FLAGS.how_many_training_epochs,
                                        FLAGS.height,
                                        FLAGS.width)
         val_iterator = val_dataset.dataset.make_initializable_iterator()
