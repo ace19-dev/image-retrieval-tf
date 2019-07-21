@@ -37,7 +37,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', .0005,
+flags.DEFINE_float('base_learning_rate', .01,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -58,9 +58,9 @@ flags.DEFINE_boolean('initialize_last_layer', True,
                      'Initialize the last layer.')
 flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
-flags.DEFINE_integer('slow_start_step', 630,
+flags.DEFINE_integer('slow_start_step', 0,
                      'Training model with small learning rate for few steps.')
-flags.DEFINE_float('slow_start_learning_rate', .0001,
+flags.DEFINE_float('slow_start_learning_rate', .002,
                    'Learning rate employed during slow start.')
 
 # Settings for fine-tuning the network.
@@ -73,7 +73,6 @@ flags.DEFINE_string('pre_trained_checkpoint',
                     # None,
                     'The pre-trained checkpoint in tensorflow format.')
 flags.DEFINE_string('checkpoint_exclude_scopes',
-                    # 'inception_v4/AuxLogits,inception_v4/Logits',
                     'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
                     # None,
                     'Comma-separated list of scopes of variables to exclude '
@@ -95,27 +94,29 @@ flags.DEFINE_boolean('ignore_missing_vars',
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/modelnet8_sv',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset_thumbnail',
                     'Where the dataset reside.')
 
 flags.DEFINE_integer('how_many_training_epochs', 50,
                      'How many training loops to run')
-flags.DEFINE_integer('batch_size', 64, 'batch size')
-flags.DEFINE_integer('val_batch_size', 64, 'validation batch size')
+flags.DEFINE_integer('batch_size', 32, 'batch size')
+flags.DEFINE_integer('val_batch_size', 32, 'validation batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
 flags.DEFINE_string('labels',
-                    'desk,dresser,glass_box,night_stand,piano,plant,tent,tv_stand',
+                    'Black-grass,Charlock,Cleavers,Common Chickweed,Common wheat,Fat Hen,'
+                    'Loose Silky-bent,Maize,Scentless Mayweed,Shepherd’s Purse,'
+                    'Small-flowered Cranesbill,Sugar beet',
                     'Labels to use')
 
 # # Test Time Augmentation
-flags.DEFINE_integer('num_tta', 5, 'Number of Test Time Augmentation')
-flags.DEFINE_integer('verification_cycle', 5, 'Number of verification cycle')
+# flags.DEFINE_integer('num_tta', 5, 'Number of Test Time Augmentation')
+# flags.DEFINE_integer('verification_cycle', 5, 'Number of verification cycle')
 
 
 # temporary constant
-TRAIN_DATA_SIZE = 2400+2400+2052+2400+2772+2880+1956+3204   # 20064
-VALIDATE_DATA_SIZE = 1032+1032+1200+1032+1200+1200+240+1200     # 8136
+TRAIN_DATA_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
+VALIDATE_DATA_SIZE = 46+68+50+107+38+81+114+38+91+41+86+70     # 830
 
 
 
@@ -196,7 +197,8 @@ def main(unused_argv):
             FLAGS.training_number_of_steps, FLAGS.learning_power,
             FLAGS.slow_start_step, FLAGS.slow_start_learning_rate)
         # optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
-        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+        # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+        optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
         summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
         for variable in slim.get_model_variables():
@@ -343,10 +345,6 @@ def main(unused_argv):
                     tf.logging.info('Epoch #%d, Step #%d, rate %.10f, accuracy %.1f%%, loss %f' %
                                     (num_epoch, step, lr, train_accuracy * 100, train_loss))
 
-                # validate per every verification_cycle flag
-                if num_epoch % FLAGS.verification_cycle != 0:
-                    continue
-
                 ###################################################
                 # Validate the model on the validation set
                 ###################################################
@@ -354,55 +352,37 @@ def main(unused_argv):
                 tf.logging.info(' Start validation ')
                 tf.logging.info('--------------------------')
 
-                # Test Time Augmentation (TTA)
-                predictions = []
-                for i in range(FLAGS.num_tta):
-                    # Reinitialize iterator with the validation dataset
-                    sess.run(val_iterator.initializer, feed_dict={tfrecord_filenames: validate_record_filenames})
-                    total_val_accuracy = 0
-                    validation_count = 0
-                    total_conf_matrix = None
+                sess.run(val_iterator.initializer, feed_dict={tfrecord_filenames: validate_record_filenames})
+                total_val_accuracy = 0
+                validation_count = 0
+                total_conf_matrix = None
+                for step in range(val_batches):
+                    validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
+                    # random augmentation for TTA
+                    # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
 
-                    batch_pred = []
-                    batch_y = []
-                    for step in range(val_batches):
-                        validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
-                        # random augmentation for TTA
-                        # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
+                    val_summary, val_accuracy, val_logit, conf_matrix = sess.run(
+                        [summary_op, accuracy, logits, confusion_matrix],
+                        feed_dict={
+                            X: validation_batch_xs,
+                            ground_truth: validation_batch_ys,
+                            is_training: False,
+                            keep_prob: 1.0
+                        })
 
-                        val_summary, val_accuracy, val_logit, conf_matrix = sess.run(
-                            [summary_op, accuracy, logits, confusion_matrix],
-                            feed_dict={
-                                X: validation_batch_xs,
-                                ground_truth: validation_batch_ys,
-                                is_training: False,
-                                keep_prob: 1.0
-                            })
+                    validation_writer.add_summary(val_summary, num_epoch)
 
-                        validation_writer.add_summary(val_summary, num_epoch)
+                    total_val_accuracy += val_accuracy
+                    validation_count += 1
+                    if total_conf_matrix is None:
+                        total_conf_matrix = conf_matrix
+                    else:
+                        total_conf_matrix += conf_matrix
 
-                        total_val_accuracy += val_accuracy
-                        validation_count += 1
-                        if total_conf_matrix is None:
-                            total_conf_matrix = conf_matrix
-                        else:
-                            total_conf_matrix += conf_matrix
-
-                        batch_pred.extend(val_logit)
-                        batch_y.extend(validation_batch_ys)
-
-                    total_val_accuracy /= validation_count
-                    tf.logging.info('Confusion Matrix:\n %s' % (total_conf_matrix))
-                    tf.logging.info('Validation accuracy = %.1f%% (N=%d)' %
-                                    (total_val_accuracy * 100, VALIDATE_DATA_SIZE))
-
-                    predictions.append(batch_pred)
-
-                pred = np.mean(predictions, axis=0)
-                tta_accuracy = np.mean(np.equal(batch_y, np.argmax(pred, axis=-1)))
-                # summaries.add(tf.summary.scalar('tta_accuracy', tta_accuracy))
-                tf.logging.info('Test Time Accuracy: %.5f' % tta_accuracy)
-                # validation_writer.add_summary(tta_accuracy, num_epoch)
+                total_val_accuracy /= validation_count
+                tf.logging.info('Confusion Matrix:\n %s' % (total_conf_matrix))
+                tf.logging.info('Validation accuracy = %.1f%% (N=%d)' %
+                                (total_val_accuracy * 100, VALIDATE_DATA_SIZE))
 
                 # Save the model checkpoint periodically.
                 if (num_epoch <= FLAGS.how_many_training_epochs-1):

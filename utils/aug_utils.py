@@ -7,33 +7,38 @@ def aug(images):
 
     seq = iaa.Sequential([
         # # Applies either Fliplr or Flipud to images.
-        iaa.SomeOf(2, [
-            iaa.Fliplr(1),
-            iaa.Flipud(1),
-            # Rotates all images by 90, 180 or 270 degrees.
-            # Resizes all images afterwards to keep the size that they had before augmentation.
-            # This may cause the images to look distorted.
-            iaa.Sometimes(0.5, iaa.Rot90((1, 3))),
-        ]),
-        # iaa.Fliplr(0.5), # horizontally flip 50% of the images
-        # iaa.Flipud(0.2),  # vertically flip 20% of all images
+        # iaa.SomeOf(2, [
+        #     iaa.Fliplr(0.5),
+        #     iaa.Flipud(0.5),
+        #     # Rotates all images by 90, 180 or 270 degrees.
+        #     # Resizes all images afterwards to keep the size that they had before augmentation.
+        #     # This may cause the images to look distorted.
+        #     iaa.Sometimes(0.5, iaa.Rot90((1, 3))),
+        # ]),
+        iaa.Fliplr(0.5), # horizontally flip 50% of the images
+        iaa.Flipud(0.2),  # vertically flip 20% of all images
 
         # crop some of the images by 0-30% of their height/width
-        iaa.Crop(percent=(0, 0.2)),
+        # iaa.CropAndPad(percent=(0, 0.2)),
+        iaa.CropAndPad(
+            percent=(0, 0.2),
+            pad_mode=["constant"],
+            pad_cval=0
+        ),
 
         # # Rotates all images by 90, 180 or 270 degrees.
         # # Resizes all images afterwards to keep the size that they had before augmentation.
         # # This may cause the images to look distorted.
         # iaa.Sometimes(0.5, iaa.Rot90((1, 3))),
 
-        # # Apply affine transformations to each image.
-        # # Scale/zoom them, translate/move them, rotate them and shear them.
-        # iaa.Affine(
-        #     scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
-        #     translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
-        #     # rotate=(-25, 25),
-        #     shear=(-8, 8)
-        # ),
+        # Apply affine transformations to each image.
+        # Scale/zoom them, translate/move them, rotate them and shear them.
+        iaa.Affine(
+            scale=(0.5, 1.5),
+            translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
+            rotate=(-45, 45),
+            # shear=(-8, 8)
+        ),
         # # iaa.Sometimes(0.5,
         # #     iaa.Affine(
         # #         scale={"x": (0.7, 1.3), "y": (0.7, 1.3)},
@@ -75,11 +80,14 @@ def aug(images):
         # #    random_order=True
         # # ),
 
+        iaa.GaussianBlur(sigma=(0.0, 2.5)),
+        # iaa.Add((-40, 40)),
+        # iaa.Sharpen(alpha=(0.0, 1.0), lightness=(0.8, 1.5)),
+
         # iaa.AdditiveGaussianNoise(scale=0.1*255),
 
         # Normalize
-        iaa.MultiplyElementwise((1./255), per_channel=True),
-        iaa.AddElementwise(-0.5)
+        # iaa.MultiplyElementwise((1./255), per_channel=True),
 
     ], random_order=True)  # apply augmenters in random order
 

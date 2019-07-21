@@ -217,14 +217,14 @@ def resnet_v2(inputs,
           # Global average pooling.
           net = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=True)
           end_points['global_pool'] = net
-        if num_classes:
-          net = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
-                            normalizer_fn=None, scope='logits')
-          end_points[sc.name + '/logits'] = net
-          if spatial_squeeze:
-            net = tf.squeeze(net, [1, 2], name='SpatialSqueeze')
-            end_points[sc.name + '/spatial_squeeze'] = net
-          end_points['predictions'] = slim.softmax(net, scope='predictions')
+        # if num_classes:
+        #   net = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
+        #                     normalizer_fn=None, scope='logits')
+        #   end_points[sc.name + '/logits'] = net
+        #   if spatial_squeeze:
+        #     net = tf.squeeze(net, [1, 2], name='SpatialSqueeze')
+        #     end_points[sc.name + '/spatial_squeeze'] = net
+        #   end_points['predictions'] = slim.softmax(net, scope='predictions')
 
         return net, end_points
 resnet_v2.default_image_size = 224
