@@ -37,7 +37,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', .01,
+flags.DEFINE_float('base_learning_rate', .003,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -109,11 +109,6 @@ flags.DEFINE_string('labels',
                     'Small-flowered Cranesbill,Sugar beet',
                     'Labels to use')
 
-# # Test Time Augmentation
-# flags.DEFINE_integer('num_tta', 5, 'Number of Test Time Augmentation')
-# flags.DEFINE_integer('verification_cycle', 5, 'Number of verification cycle')
-
-
 # temporary constant
 TRAIN_DATA_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
 VALIDATE_DATA_SIZE = 46+68+50+107+38+81+114+38+91+41+86+70     # 830
@@ -165,15 +160,12 @@ def main(unused_argv):
         # for v in slim.get_model_variables():
         #     tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
-        # Gather initial summaries.
-        summaries = set(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
-
         prediction = tf.argmax(logits, axis=1, name='prediction')
         correct_prediction = tf.equal(prediction, ground_truth)
         confusion_matrix = tf.math.confusion_matrix(
             ground_truth, prediction, num_classes=num_classes)
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy')
-        summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
+        # summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
 
         # Define loss
         tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=ground_truth,
@@ -183,9 +175,13 @@ def main(unused_argv):
         # the updates for the batch_norm variables created by model.
         update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
 
-        # # Add summaries for model variables.
-        # for model_var in slim.get_model_variables():
-        #     summaries.add(tf.summary.histogram(model_var.op.name, model_var))
+        # Gather initial summaries.
+        summaries = set(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
+        summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
+
+        # Add summaries for model variables.
+        for variable in slim.get_model_variables():
+            summaries.add(tf.compat.v1.summary.histogram(variable.op.name, variable))
 
         # Add summaries for losses.
         for loss in tf.compat.v1.get_collection(tf.GraphKeys.LOSSES):
@@ -196,33 +192,14 @@ def main(unused_argv):
             FLAGS.learning_rate_decay_step, FLAGS.learning_rate_decay_factor,
             FLAGS.training_number_of_steps, FLAGS.learning_power,
             FLAGS.slow_start_step, FLAGS.slow_start_learning_rate)
-        # optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
-        # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
-        optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
         summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
-        for variable in slim.get_model_variables():
-            summaries.add(tf.compat.v1.summary.histogram(variable.op.name, variable))
-
+        # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+        # optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
+        optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
         total_loss, grads_and_vars = train_utils.optimize(optimizer)
         total_loss = tf.compat.v1.check_numerics(total_loss, 'Loss is inf or nan.')
         summaries.add(tf.compat.v1.summary.scalar('total_loss', total_loss))
-
-        # # Modify the gradients for biases and last layer variables.
-        # last_layers = train_utils.get_extra_layer_scopes(
-        #     FLAGS.last_layers_contain_logits_only)
-        # grad_mult = train_utils.get_model_gradient_multipliers(
-        #     last_layers, FLAGS.last_layer_gradient_multiplier)
-        # if grad_mult:
-        #     grads_and_vars = slim.learning.multiply_gradients(
-        #         grads_and_vars, grad_mult)
-
-        # Gradient clipping
-        # clipped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in grads_and_vars]
-        # Otherwise ->
-        # gradients, variables = zip(*optimizer.compute_gradients(loss))
-        # gradients, _ = tf.clip_by_global_norm(grads_and_vars[0], 5.0)
-        # optimize = optimizer.apply_gradients(zip(gradients, grads_and_vars[1]))
 
         # TensorBoard: How to plot histogram for gradients
         # grad_summ_op = tf.summary.merge([tf.summary.histogram("%s-grad" % g[1].name, g[0]) for g in grads_and_vars])
@@ -234,26 +211,18 @@ def main(unused_argv):
         with tf.control_dependencies([update_op]):
             train_op = tf.identity(total_loss, name='train_op')
 
-        # Add the summaries. These contain the summaries
-        # created by model and either optimize() or _gather_loss().
-        summaries |= set(tf.compat.v1.get_collection(tf.GraphKeys.SUMMARIES))
-
-        # Merge all summaries together.
-        summary_op = tf.compat.v1.summary.merge(list(summaries))
-        train_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir, graph)
-        validation_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/validation', graph)
 
         ###############
         # Prepare data
         ###############
         # training dateset
         tfrecord_filenames = tf.compat.v1.placeholder(tf.string, shape=[])
-        dataset = data.Dataset(tfrecord_filenames,
+        tr_dataset = data.Dataset(tfrecord_filenames,
                                FLAGS.batch_size,
                                FLAGS.how_many_training_epochs,
                                FLAGS.height,
                                FLAGS.width)
-        iterator = dataset.dataset.make_initializable_iterator()
+        iterator = tr_dataset.dataset.make_initializable_iterator()
         next_batch = iterator.get_next()
 
         # validation dateset
@@ -267,6 +236,15 @@ def main(unused_argv):
         sess_config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
         with tf.compat.v1.Session(config = sess_config) as sess:
             sess.run(tf.global_variables_initializer())
+
+            # Add the summaries. These contain the summaries
+            # created by model and either optimize() or _gather_loss().
+            summaries |= set(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
+
+            # Merge all summaries together.
+            summary_op = tf.compat.v1.summary.merge(list(summaries))
+            train_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir, graph)
+            validation_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/validation', graph)
 
             # Create a saver object which will save all the variables
             saver = tf.compat.v1.train.Saver()
@@ -293,6 +271,7 @@ def main(unused_argv):
             # a list of strings, or a tf.Tensor of strings.
             train_record_filenames = os.path.join(FLAGS.dataset_dir, 'train.record')
             validate_record_filenames = os.path.join(FLAGS.dataset_dir, 'validate.record')
+
             ############################
             # Training loop.
             ############################
@@ -303,7 +282,7 @@ def main(unused_argv):
 
                 sess.run(iterator.initializer, feed_dict={tfrecord_filenames: train_record_filenames})
                 for step in range(tr_batches):
-                    train_batch_xs, train_batch_ys = sess.run(next_batch)
+                    filenames, train_batch_xs, train_batch_ys = sess.run(next_batch)
                     # # Verify image
                     # # assert not np.any(np.isnan(train_batch_xs))
                     # n_batch = train_batch_xs.shape[0]
@@ -357,19 +336,18 @@ def main(unused_argv):
                 validation_count = 0
                 total_conf_matrix = None
                 for step in range(val_batches):
-                    validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
+                    filenames, validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
                     # random augmentation for TTA
                     # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
 
-                    val_summary, val_accuracy, val_logit, conf_matrix = sess.run(
-                        [summary_op, accuracy, logits, confusion_matrix],
+                    val_summary, val_accuracy, conf_matrix = sess.run(
+                        [summary_op, accuracy, confusion_matrix],
                         feed_dict={
                             X: validation_batch_xs,
                             ground_truth: validation_batch_ys,
                             is_training: False,
                             keep_prob: 1.0
                         })
-
                     validation_writer.add_summary(val_summary, num_epoch)
 
                     total_val_accuracy += val_accuracy

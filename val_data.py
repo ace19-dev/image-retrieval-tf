@@ -29,12 +29,13 @@ class Dataset(object):
         # The map transformation takes a function and applies it to every element
         # of the dataset.
         dataset = dataset.map(self.decode, num_parallel_calls=8)
-        dataset = dataset.map(self.augment, num_parallel_calls=8)
+        # dataset = dataset.map(self.augment, num_parallel_calls=8)
         dataset = dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
         # files for shuffling and processing.
         dataset = dataset.prefetch(buffer_size=batch_size)
+        dataset = dataset.shuffle(1000 + 3 * batch_size)
 
         dataset = dataset.repeat(1)
         self.dataset = dataset.batch(batch_size)
@@ -46,11 +47,12 @@ class Dataset(object):
             serialized_example,
             # Defaults are not specified since both keys are required.
             features={
-                # 'image/filename': tf.FixedLenFeature([], tf.string),
+                'image/fullpath': tf.FixedLenFeature([], tf.string),
                 'image/encoded': tf.io.FixedLenFeature([], tf.string),
                 'image/class/label': tf.io.FixedLenFeature([], tf.int64),
             })
 
+        filename = features['image/fullpath']
         # Convert from a scalar string tensor to a float32 tensor with shape
         image_decoded = tf.image.decode_png(features['image/encoded'], channels=3)
         image = tf.image.resize(image_decoded, [self.resize_h, self.resize_w])
@@ -58,10 +60,10 @@ class Dataset(object):
         # Convert label from a scalar uint8 tensor to an int32 scalar.
         label = tf.cast(features['image/class/label'], tf.int64)
 
-        return image, label
+        return filename, image, label
 
 
-    def augment(self, image, label):
+    def augment(self, filename, image, label):
         """Placeholder for data augmentation.
         """
         # image = tf.image.central_crop(image, 0.9)
@@ -76,12 +78,12 @@ class Dataset(object):
         # image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
         # image = tf.image.resize_images(image, [self.resize_h, self.resize_w])
 
-        return image, label
+        return filename, image, label
 
 
-    def normalize(self, image, label):
+    def normalize(self, filename, image, label):
         # """Convert `image` from [0, 255] -> [-0.5, 0.5] floats."""
         # image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
         # input[channel] = (input[channel] - mean[channel]) / std[channel]
 
-        return tf.div(tf.subtract(image, MEAN), STD), label
+        return filename, tf.div(tf.subtract(image, MEAN), STD), label

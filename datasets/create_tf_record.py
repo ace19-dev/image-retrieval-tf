@@ -78,6 +78,7 @@ def dict_to_tf_example(image_name,
         'image/height': dataset_utils.int64_feature(height),
         'image/width': dataset_utils.int64_feature(width),
         'image/filename': dataset_utils.bytes_feature(image_name.encode('utf8')),
+        'image/fullpath': dataset_utils.bytes_feature(full_path.encode('utf8')),
         'image/source_id': dataset_utils.bytes_feature(image_name.encode('utf8')),
         'image/key/sha256': dataset_utils.bytes_feature(key.encode('utf8')),
         'image/encoded': dataset_utils.bytes_feature(encoded),
@@ -107,7 +108,7 @@ def main(_):
 
     label_map = get_label_map(label_to_index)
 
-
+    random.shuffle(dataset_lst)
     for i, cls in enumerate(dataset_lst):
         cls_path = os.path.join(FLAGS.dataset_dir, cls)
         filenames = os.listdir(os.path.join(cls_path, FLAGS.dataset_category))

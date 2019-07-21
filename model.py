@@ -37,13 +37,17 @@ def basic_model(inputs,
                                    attention_module=attention_module,
                                    scope='resnet_v2_50')
 
-    net = slim.batch_norm(net, scope='batch_norm')
-    end_points['batch_norm'] = net
+    batch_norm_params['is_training'] = is_training
+
+    # net = slim.batch_norm(net, scope='batch_norm')
+    # end_points['batch_norm'] = net
     net = slim.flatten(net, scope='flatten')
     end_points['flatten'] = net
-    net = slim.fully_connected(net, 256, scope='fc1')
+    net = slim.fully_connected(net, 256, normalizer_fn=slim.batch_norm,
+                               normalizer_params=batch_norm_params, scope='fc1')
     end_points['fc1'] = net
-    logits = slim.fully_connected(net, num_classes, activation_fn=None, scope='fc2')
+    logits = slim.fully_connected(net, num_classes, normalizer_fn=slim.batch_norm,
+                               normalizer_params=batch_norm_params, activation_fn=None, scope='fc2')
     end_points['fc2'] = logits
 
     return logits, end_points
