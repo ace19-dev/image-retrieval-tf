@@ -213,10 +213,10 @@ def resnet_v2(inputs,
         end_points = slim.utils.convert_collection_to_dict(
             end_points_collection)
 
-        if global_pool:
-          # Global average pooling.
-          net = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=True)
-          end_points['global_pool'] = net
+        # if global_pool:
+        #   # Global average pooling.
+        #   net = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=True)
+        #   end_points['global_pool'] = net
         # if num_classes:
         #   net = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
         #                     normalizer_fn=None, scope='logits')
