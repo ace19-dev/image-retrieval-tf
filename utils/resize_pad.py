@@ -16,7 +16,7 @@ FLAGS = None
 
 
 def main(_):
-    tf.compat.v1.logging.set_verbosity(tf.logging.INFO)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
     cls_lst = os.listdir(FLAGS.original_dir)
     cls_lst.sort()
@@ -38,7 +38,7 @@ def main(_):
             total = len(images)
             for idx, img in enumerate(images):
                 if idx % 100 == 0:
-                    tf.logging.info('On image %d of %d', idx, total)
+                    tf.compat.v1.logging.info('On image %d of %d', idx, total)
 
                 image_path = os.path.join(img_dir, img)
                 im = Image.open(image_path)
@@ -50,8 +50,8 @@ def main(_):
 
                 # use thumbnail() or resize() method to resize the input image
                 # thumbnail is a in-place operation
-                im.thumbnail(new_size, Image.ANTIALIAS)
-                # im = im.resize(new_size, Image.ANTIALIAS)
+                # im.thumbnail(new_size, Image.ANTIALIAS)
+                im = im.resize(new_size, Image.ANTIALIAS)
 
                 # create a new image and paste the resized on it
                 new_im = Image.new("RGB", (desired_size, desired_size))
@@ -67,12 +67,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '--original_dir',
         type=str,
-        default='/home/ace19/dl_data/v2-plant-seedlings-dataset/classes',
+        default='/home/ace19/dl_data/V2-Plant-Seedlings-Dataset/classes',
         help='Where is image to load.')
     parser.add_argument(
         '--target_dir',
         type=str,
-        default='/home/ace19/dl_data/v2-plant-seedlings-dataset_thumbnail/classes',
+        default='/home/ace19/dl_data/V2-Plant-Seedlings-Dataset-resized/classes',
         help='Where is resized image to save.')
     parser.add_argument(
         '--desired_size',
@@ -81,4 +81,4 @@ if __name__ == '__main__':
         help='how do you want image resize height, width.')
 
     FLAGS, unparsed = parser.parse_known_args()
-    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)

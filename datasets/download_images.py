@@ -42,8 +42,6 @@ def ParseData(data_file):
   return key_url_list
 
 
-
-
 def DownloadImage(key_url):
   out_dir = sys.argv[2]
   (key, url) = key_url
