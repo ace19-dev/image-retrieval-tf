@@ -133,6 +133,7 @@ def deep_cosine_metric_learning(inputs,
 
         features = net
 
+        # TODO: check shape
         # Features in rows, normalize axis 1.
         features = tf.nn.l2_normalize(features, dim=1)
 
