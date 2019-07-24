@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-import data
 import model
+import train_data
 import val_data
 from utils import train_utils, aug_utils
 
@@ -37,7 +37,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', .003,
+flags.DEFINE_float('base_learning_rate', 0.02,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -60,7 +60,7 @@ flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
 flags.DEFINE_integer('slow_start_step', 0,
                      'Training model with small learning rate for few steps.')
-flags.DEFINE_float('slow_start_learning_rate', .002,
+flags.DEFINE_float('slow_start_learning_rate', 0.002,
                    'Learning rate employed during slow start.')
 
 # Settings for fine-tuning the network.
@@ -69,12 +69,12 @@ flags.DEFINE_string('saved_checkpoint_dir',
                     None,
                     'Saved checkpoint dir.')
 flags.DEFINE_string('pre_trained_checkpoint',
-                    # './pre-trained/resnet_v2_50.ckpt',
-                    None,
+                    'pre-trained/resnet_v2_50.ckpt',
+                    # None,
                     'The pre-trained checkpoint in tensorflow format.')
 flags.DEFINE_string('checkpoint_exclude_scopes',
-                    # 'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
-                    None,
+                    'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
+                    # None,
                     'Comma-separated list of scopes of variables to exclude '
                     'when restoring from a checkpoint.')
 flags.DEFINE_string('trainable_scopes',
@@ -162,14 +162,15 @@ def main(unused_argv):
 
         prediction = tf.argmax(logits, axis=1, name='prediction')
         correct_prediction = tf.equal(prediction, ground_truth)
-        confusion_matrix = tf.math.confusion_matrix(
-            ground_truth, prediction, num_classes=num_classes)
+        confusion_matrix = tf.math.confusion_matrix(ground_truth,
+                                                    prediction,
+                                                    num_classes=num_classes)
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy')
         # summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
 
         # Define loss
         tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=ground_truth,
-                                               logits=logits)
+                                                         logits=logits)
 
         # Gather update_ops. These contain, for example,
         # the updates for the batch_norm variables created by model.
@@ -217,11 +218,11 @@ def main(unused_argv):
         ###############
         # training dateset
         tfrecord_filenames = tf.compat.v1.placeholder(tf.string, shape=[])
-        tr_dataset = data.Dataset(tfrecord_filenames,
-                               FLAGS.batch_size,
-                               FLAGS.how_many_training_epochs,
-                               FLAGS.height,
-                               FLAGS.width)
+        tr_dataset = train_data.Dataset(tfrecord_filenames,
+                                        FLAGS.batch_size,
+                                        FLAGS.how_many_training_epochs,
+                                        FLAGS.height,
+                                        FLAGS.width)
         iterator = tr_dataset.dataset.make_initializable_iterator()
         next_batch = iterator.get_next()
 
