@@ -37,7 +37,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.02,
+flags.DEFINE_float('base_learning_rate', 0.001,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -94,7 +94,7 @@ flags.DEFINE_boolean('ignore_missing_vars',
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset_thumbnail',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset_resized',
                     'Where the dataset reside.')
 
 flags.DEFINE_integer('how_many_training_epochs', 50,
@@ -333,14 +333,26 @@ def main(unused_argv):
                 tf.logging.info(' Start validation ')
                 tf.logging.info('--------------------------')
 
-                sess.run(val_iterator.initializer, feed_dict={tfrecord_filenames: validate_record_filenames})
                 total_val_accuracy = 0
                 validation_count = 0
                 total_conf_matrix = None
+                sess.run(val_iterator.initializer, feed_dict={tfrecord_filenames: validate_record_filenames})
                 for step in range(val_batches):
                     filenames, validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
                     # random augmentation for TTA
                     # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
+                    # # Verify image
+                    # # assert not np.any(np.isnan(train_batch_xs))
+                    # n_batch = validation_batch_xs.shape[0]
+                    # # n_view = train_batch_xs.shape[1]
+                    # for i in range(n_batch):
+                    #     img = validation_batch_xs[i]
+                    #     # scipy.misc.toimage(img).show() Or
+                    #     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
+                    #     cv2.imwrite('/home/ace19/Pictures/' + str(i) + '.png', img)
+                    #     # cv2.imshow(str(train_batch_ys[idx]), img)
+                    #     cv2.waitKey(100)
+                    #     cv2.destroyAllWindows()
 
                     val_summary, val_accuracy, conf_matrix = sess.run(
                         [summary_op, accuracy, confusion_matrix],

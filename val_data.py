@@ -22,23 +22,23 @@ class Dataset(object):
         self.resize_h = height
         self.resize_w = width
 
-        dataset = tf.data.TFRecordDataset(tfrecord_path,
+        self.dataset = tf.data.TFRecordDataset(tfrecord_path,
                                           compression_type='GZIP',
                                           num_parallel_reads=batch_size * 4)
-        # dataset = dataset.map(self._parse_func, num_parallel_calls=8)
+        # self.dataset = self.dataset.map(self._parse_func, num_parallel_calls=8)
         # The map transformation takes a function and applies it to every element
-        # of the dataset.
-        dataset = dataset.map(self.decode, num_parallel_calls=8)
-        # dataset = dataset.map(self.augment, num_parallel_calls=8)
-        dataset = dataset.map(self.normalize, num_parallel_calls=8)
+        # of the self.dataset.
+        self.dataset = self.dataset.map(self.decode, num_parallel_calls=8)
+        self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
+        self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
         # files for shuffling and processing.
-        dataset = dataset.prefetch(buffer_size=batch_size)
-        dataset = dataset.shuffle(1000 + 3 * batch_size)
+        self.dataset = self.dataset.prefetch(buffer_size=batch_size)
+        self.dataset = self.dataset.shuffle(1000 + 3 * batch_size)
 
-        dataset = dataset.repeat(num_epochs)
-        self.dataset = dataset.batch(batch_size)
+        self.dataset = self.dataset.repeat(num_epochs)
+        self.dataset = self.dataset.batch(batch_size)
 
 
     def decode(self, serialized_example):
@@ -72,7 +72,7 @@ class Dataset(object):
         # image = tf.image.rot90(image, k=random.randint(0,4))
         # paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
         # image = tf.pad(image, paddings, "CONSTANT")
-        image = tf.image.random_brightness(image, max_delta=2.0)
+        image = tf.image.random_brightness(image, max_delta=1.3)
         image = tf.image.random_contrast(image, lower=0.7, upper=1.3)
         # image = tf.image.random_hue(image, max_delta=0.04)
         # image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
