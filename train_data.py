@@ -73,12 +73,12 @@ class Dataset(object):
         # image = tf.image.central_crop(image, 0.9)
         # image = tf.image.random_flip_up_down(image)
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.rot90(image, k=random.randint(0,4))
+        image = tf.image.rot90(image, k=random.randint(0,1))
         # paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
         # image = tf.pad(image, paddings, "CONSTANT")
         image = tf.image.random_brightness(image, max_delta=1.3)
         image = tf.image.random_contrast(image, lower=0.7, upper=1.3)
-        image = tf.image.random_hue(image, max_delta=0.04)
+        # image = tf.image.random_hue(image, max_delta=0.04)
         image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
         # image = tf.image.resize_images(image, [self.resize_h, self.resize_w])
 
