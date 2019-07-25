@@ -37,7 +37,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.05,
+flags.DEFINE_float('base_learning_rate', 0.02,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -60,7 +60,7 @@ flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
 flags.DEFINE_integer('slow_start_step', 300,
                      'Training model with small learning rate for few steps.')
-flags.DEFINE_float('slow_start_learning_rate', 0.005,
+flags.DEFINE_float('slow_start_learning_rate', 0.002,
                    'Learning rate employed during slow start.')
 
 # Settings for fine-tuning the network.
@@ -94,7 +94,7 @@ flags.DEFINE_boolean('ignore_missing_vars',
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-thumbnail',
                     'Where the dataset reside.')
 
 flags.DEFINE_integer('how_many_training_epochs', 80,
@@ -196,8 +196,8 @@ def main(unused_argv):
         summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
         # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
-        # optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
-        optimizer = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
+        optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
+        # optimizer = tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
         total_loss, grads_and_vars = train_utils.optimize(optimizer)
         total_loss = tf.compat.v1.check_numerics(total_loss, 'Loss is inf or nan.')
         summaries.add(tf.compat.v1.summary.scalar('total_loss', total_loss))
@@ -211,7 +211,6 @@ def main(unused_argv):
         update_op = tf.group(*update_ops)
         with tf.control_dependencies([update_op]):
             train_op = tf.identity(total_loss, name='train_op')
-
 
         ###############
         # Prepare data
