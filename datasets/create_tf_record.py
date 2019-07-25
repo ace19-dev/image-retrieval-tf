@@ -15,10 +15,10 @@ from datasets import dataset_utils
 
 flags = tf.app.flags
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset_resized/classes',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized/classes',
                     'Root Directory to dataset.')
 flags.DEFINE_string('output_path',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset_resized/train.record',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized/train.record',
                     'Path to output TFRecord')
 flags.DEFINE_string('dataset_category',
                     'train',
@@ -34,7 +34,8 @@ def get_label_map(label_to_index):
         data_path = os.path.join(FLAGS.dataset_dir, cls, FLAGS.dataset_category)
         img_lst = os.listdir(data_path)
         for n, img in enumerate(img_lst):
-            label_map[img] = label_to_index[cls]
+            img_path = os.path.join(data_path, img)
+            label_map[img_path] = label_to_index[cls]
 
     return label_map
 
@@ -72,7 +73,7 @@ def dict_to_tf_example(image_name,
     #     label = -1
     # else:
     #     label = int(label_map[image_name])
-    label = int(label_map[image_name])
+    label = int(label_map[full_path])
 
     example = tf.train.Example(features=tf.train.Features(feature={
         'image/height': dataset_utils.int64_feature(height),
@@ -111,11 +112,12 @@ def main(_):
     random.shuffle(dataset_lst)
     for i, cls in enumerate(dataset_lst):
         cls_path = os.path.join(FLAGS.dataset_dir, cls)
-        filenames = os.listdir(os.path.join(cls_path, FLAGS.dataset_category))
+        img_lst = os.listdir(os.path.join(cls_path, FLAGS.dataset_category))
 
-        for idx, image in enumerate(filenames):
+        total = len(img_lst)
+        for idx, image in enumerate(img_lst):
             if idx % 100 == 0:
-                tf.compat.v1.logging.info('On image %d of %d', idx, len(filenames))
+                tf.compat.v1.logging.info('On image %d of %d', idx, total)
 
             tf_example = dict_to_tf_example(image, cls_path, label_map, FLAGS.dataset_category)
             writer.write(tf_example.SerializeToString())

@@ -37,7 +37,7 @@ class Dataset(object):
         self.dataset = self.dataset.prefetch(buffer_size=batch_size)
         self.dataset = self.dataset.shuffle(1000 + 3 * batch_size)
 
-        self.dataset = self.dataset.repeat(num_epochs)
+        self.dataset = self.dataset.repeat()
         self.dataset = self.dataset.batch(batch_size)
 
 
@@ -47,7 +47,7 @@ class Dataset(object):
             serialized_example,
             # Defaults are not specified since both keys are required.
             features={
-                'image/fullpath': tf.FixedLenFeature([], tf.string),
+                'image/fullpath': tf.io.FixedLenFeature([], tf.string),
                 'image/encoded': tf.io.FixedLenFeature([], tf.string),
                 'image/class/label': tf.io.FixedLenFeature([], tf.int64),
             })
@@ -69,7 +69,7 @@ class Dataset(object):
         # image = tf.image.central_crop(image, 0.9)
         # image = tf.image.random_flip_up_down(image)
         image = tf.image.random_flip_left_right(image)
-        # image = tf.image.rot90(image, k=random.randint(0,4))
+        image = tf.image.rot90(image, k=random.randint(0,4))
         # paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
         # image = tf.pad(image, paddings, "CONSTANT")
         image = tf.image.random_brightness(image, max_delta=1.3)

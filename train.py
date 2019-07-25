@@ -37,7 +37,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.001,
+flags.DEFINE_float('base_learning_rate', 0.05,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -94,19 +94,19 @@ flags.DEFINE_boolean('ignore_missing_vars',
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset_resized',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized',
                     'Where the dataset reside.')
 
-flags.DEFINE_integer('how_many_training_epochs', 50,
+flags.DEFINE_integer('how_many_training_epochs', 80,
                      'How many training loops to run')
 flags.DEFINE_integer('batch_size', 32, 'batch size')
 flags.DEFINE_integer('val_batch_size', 32, 'validation batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
 flags.DEFINE_string('labels',
-                    'Black-grass,Charlock,Cleavers,Common Chickweed,Common wheat,Fat Hen,'
-                    'Loose Silky-bent,Maize,Scentless Mayweed,Shepherd’s Purse,'
-                    'Small-flowered Cranesbill,Sugar beet',
+                    'Black_grass,Charlock,Cleavers,Common_Chickweed,Common_wheat,Fat_Hen,'
+                    'Loose_Silky_bent,Maize,Scentless_Mayweed,Shepherds_Purse,'
+                    'Small_flowered_Cranesbill,Sugar_beet',
                     'Labels to use')
 
 # temporary constant
