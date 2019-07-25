@@ -37,10 +37,10 @@ def basic_model(inputs,
                                    attention_module=attention_module,
                                    scope='resnet_v2_50')
 
-        # # Global average pooling.
-        # net = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=True)
-        # end_points['global_pool'] = net
-
+    #     # Global average pooling.
+    #     net = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=True)
+    #     end_points['global_pool'] = net
+    #
     # batch_norm_params['is_training'] = is_training
     # # net = slim.batch_norm(net, scope='batch_norm')
     # # end_points['batch_norm'] = net
@@ -53,7 +53,7 @@ def basic_model(inputs,
     # net = slim.fully_connected(net, num_classes, normalizer_fn=slim.batch_norm,
     #                            normalizer_params=batch_norm_params, activation_fn=None, scope='fc2')
     # end_points['fc2'] = net
-    #
+
     logits = net
 
     return logits, end_points
