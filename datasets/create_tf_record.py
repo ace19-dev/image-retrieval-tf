@@ -15,13 +15,13 @@ from datasets import dataset_utils
 
 flags = tf.app.flags
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-thumbnail/classes',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized/classes',
                     'Root Directory to dataset.')
 flags.DEFINE_string('output_path',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-thumbnail/train.record',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized/validate.record',
                     'Path to output TFRecord')
 flags.DEFINE_string('dataset_category',
-                    'train',
+                    'validate',
                     'dataset category, train|validate|test')
 
 FLAGS = flags.FLAGS

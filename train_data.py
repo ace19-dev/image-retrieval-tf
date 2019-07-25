@@ -78,8 +78,8 @@ class Dataset(object):
         # image = tf.pad(image, paddings, "CONSTANT")
         image = tf.image.random_brightness(image, max_delta=1.3)
         image = tf.image.random_contrast(image, lower=0.7, upper=1.3)
-        # image = tf.image.random_hue(image, max_delta=0.04)
-        # image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
+        image = tf.image.random_hue(image, max_delta=0.04)
+        image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
         # image = tf.image.resize_images(image, [self.resize_h, self.resize_w])
 
         return filename, image, label
@@ -88,6 +88,6 @@ class Dataset(object):
     def normalize(self, filename, image, label):
         # """Convert `image` from [0, 255] -> [-0.5, 0.5] floats."""
         # image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
-        # input[channel] = (input[channel] - mean[channel]) / std[channel]
 
+        # input[channel] = (input[channel] - mean[channel]) / std[channel]
         return filename, tf.div(tf.subtract(image, MEAN), STD), label
