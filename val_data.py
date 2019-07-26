@@ -29,7 +29,7 @@ class Dataset(object):
         # The map transformation takes a function and applies it to every element
         # of the self.dataset.
         self.dataset = self.dataset.map(self.decode, num_parallel_calls=8)
-        self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
+        # self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
@@ -69,7 +69,7 @@ class Dataset(object):
         # image = tf.image.central_crop(image, 0.9)
         # image = tf.image.random_flip_up_down(image)
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.rot90(image, k=random.randint(0,4))
+        image = tf.image.rot90(image, k=random.randint(0,1))
         # paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
         # image = tf.pad(image, paddings, "CONSTANT")
         image = tf.image.random_brightness(image, max_delta=1.3)
@@ -84,6 +84,6 @@ class Dataset(object):
     def normalize(self, filename, image, label):
         # """Convert `image` from [0, 255] -> [-0.5, 0.5] floats."""
         # image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
-        # input[channel] = (input[channel] - mean[channel]) / std[channel]
 
+        # input[channel] = (input[channel] - mean[channel]) / std[channel]
         return filename, tf.div(tf.subtract(image, MEAN), STD), label
