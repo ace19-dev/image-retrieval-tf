@@ -116,6 +116,11 @@ VALIDATE_DATA_SIZE = 46+68+50+107+38+81+114+38+91+41+86+70     # 830
 
 def show_batch_data(filenames, batch_x, batch_y, additional_path=None):
     default_path = '/home/ace19/Pictures/'
+    if additional_path is not None:
+        default_path = os.path.join(default_path, additional_path)
+        if not os.path.exists(default_path):
+            os.makedirs(default_path)
+
     assert not np.any(np.isnan(batch_x))
 
     n_batch = batch_x.shape[0]
@@ -124,11 +129,7 @@ def show_batch_data(filenames, batch_x, batch_y, additional_path=None):
         img = batch_x[i]
         # scipy.misc.toimage(img).show() Or
         img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
-        if additional_path is not None:
-            default_path = os.path.join(default_path, additional_path)
-            if not os.path.exists(default_path):
-                os.makedirs(default_path)
-        cv2.imwrite(default_path + str(i) + '.png', img)
+        cv2.imwrite(os.path.join(default_path, str(i) + '.png'), img)
         # cv2.imshow(str(batch_y[idx]), img)
         cv2.waitKey(100)
         cv2.destroyAllWindows()
