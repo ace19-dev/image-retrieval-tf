@@ -114,6 +114,25 @@ TRAIN_DATA_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
 VALIDATE_DATA_SIZE = 46+68+50+107+38+81+114+38+91+41+86+70     # 830
 
 
+def show_batch_data(filenames, batch_x, batch_y, additional_path=None):
+    default_path = '/home/ace19/Pictures/'
+    assert not np.any(np.isnan(batch_x))
+
+    n_batch = batch_x.shape[0]
+    # n_view = batch_x.shape[1]
+    for i in range(n_batch):
+        img = batch_x[i]
+        # scipy.misc.toimage(img).show() Or
+        img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
+        if additional_path is not None:
+            default_path = os.path.join(default_path, additional_path)
+            if not os.path.exists(default_path):
+                os.makedirs(default_path)
+        cv2.imwrite(default_path + str(i) + '.png', img)
+        # cv2.imshow(str(batch_y[idx]), img)
+        cv2.waitKey(100)
+        cv2.destroyAllWindows()
+
 
 def main(unused_argv):
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
@@ -284,32 +303,11 @@ def main(unused_argv):
                 sess.run(iterator.initializer, feed_dict={tfrecord_filenames: train_record_filenames})
                 for step in range(tr_batches):
                     filenames, train_batch_xs, train_batch_ys = sess.run(next_batch)
-                    # # Verify image
-                    # # assert not np.any(np.isnan(train_batch_xs))
-                    # n_batch = train_batch_xs.shape[0]
-                    # # n_view = train_batch_xs.shape[1]
-                    # for i in range(n_batch):
-                    #     img = train_batch_xs[i]
-                    #     # scipy.misc.toimage(img).show() Or
-                    #     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
-                    #     cv2.imwrite('/home/ace19/Pictures/' + str(i) + '.png', img)
-                    #     # cv2.imshow(str(train_batch_ys[idx]), img)
-                    #     cv2.waitKey(100)
-                    #     cv2.destroyAllWindows()
+                    show_batch_data(filenames, train_batch_xs, train_batch_ys)
 
-                    # augmented_batch_xs = aug_utils.aug(train_batch_xs)
-                    # # Verify image
-                    # # assert not np.any(np.isnan(train_batch_xs))
-                    # n_batch = augmented_batch_xs.shape[0]
-                    # # n_view = train_batch_xs.shape[1]
-                    # for i in range(n_batch):
-                    #     img = augmented_batch_xs[i]
-                    #     # scipy.misc.toimage(img).show() Or
-                    #     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
-                    #     cv2.imwrite('/home/ace19/Pictures/aug/' + str(i) + '.png', img)
-                    #     # cv2.imshow(str(train_batch_ys[idx]), img)
-                    #     cv2.waitKey(100)
-                    #     cv2.destroyAllWindows()
+                    augmented_batch_xs = aug_utils.aug(train_batch_xs)
+                    show_batch_data(filenames, augmented_batch_xs,
+                                    train_batch_ys, 'aug')
 
                     # Run the graph with this batch of training data and learning rate policy.
                     lr, train_summary, train_accuracy, train_loss, _ = \
@@ -338,20 +336,12 @@ def main(unused_argv):
                 sess.run(val_iterator.initializer, feed_dict={tfrecord_filenames: validate_record_filenames})
                 for step in range(val_batches):
                     filenames, validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
-                    # random augmentation for TTA
+                    # show_batch_data(filenames, validation_batch_xs, validation_batch_ys)
+
+                    # # random augmentation for TTA
                     # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
-                    # # Verify image
-                    # # assert not np.any(np.isnan(train_batch_xs))
-                    # n_batch = validation_batch_xs.shape[0]
-                    # # n_view = train_batch_xs.shape[1]
-                    # for i in range(n_batch):
-                    #     img = validation_batch_xs[i]
-                    #     # scipy.misc.toimage(img).show() Or
-                    #     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
-                    #     cv2.imwrite('/home/ace19/Pictures/' + str(i) + '.png', img)
-                    #     # cv2.imshow(str(train_batch_ys[idx]), img)
-                    #     cv2.waitKey(100)
-                    #     cv2.destroyAllWindows()
+                    # show_batch_data(filenames, augmented_val_batch_xs,
+                    #                 validation_batch_ys, 'aug')
 
                     val_summary, val_accuracy, conf_matrix = sess.run(
                         [summary_op, accuracy, confusion_matrix],
