@@ -18,9 +18,14 @@ class Dataset(object):
     Handles loading, partitioning, and preparing training data.
     """
 
-    def __init__(self, tfrecord_path, batch_size, num_epochs, height, width):
+    def __init__(self, tfrecord_path, batch_size, num_classes, num_epochs, data_size, height, width):
         self.resize_h = height
         self.resize_w = width
+
+        # self.target_dist = []
+        # dist = 1.0 / num_classes
+        # for i in range(num_classes):
+        #     self.target_dist.append(round(dist, 2))
 
         self.dataset = tf.data.TFRecordDataset(tfrecord_path,
                                           compression_type='GZIP',
@@ -32,16 +37,22 @@ class Dataset(object):
         self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
-        # Prefetches a batch at a time to smooth out the time taken to load input
-        # files for shuffling and processing.
-        self.dataset = self.dataset.prefetch(buffer_size=batch_size)
         # The shuffle transformation uses a finite-sized buffer to shuffle elements
         # in memory. The parameter is the number of elements in the buffer. For
         # completely uniform shuffling, set the parameter to be the same as the
         # number of elements in the dataset.
-        self.dataset = self.dataset.shuffle(1000 + 3 * batch_size)
-
+        self.dataset = \
+            self.dataset.shuffle(buffer_size=(int(data_size * 0.4) + 3 * batch_size), seed=88)
+        # buffer_size=(int(len(data_list) * 0.4) + 3 * batch_size)
         self.dataset = self.dataset.repeat()
+
+        # resampling = \
+        #     tf.data.experimental.rejection_resample(class_func=self.class_mapping_function,
+        #                                             target_dist=self.target_dist)
+        # self.dataset = self.dataset.apply(resampling)
+        # # Return to the same Dataset shape as was the original input
+        # self.dataset = self.dataset.map(lambda _, data: (data))
+
         self.dataset = self.dataset.batch(batch_size)
 
 
@@ -91,3 +102,15 @@ class Dataset(object):
 
         # input[channel] = (input[channel] - mean[channel]) / std[channel]
         return filename, tf.div(tf.subtract(image, MEAN), STD), label
+
+
+    def class_mapping_function(self, filename, image, label):
+        """
+            returns a function to be used with dataset.map() to return class numeric ID
+            The function is mapping a nested structure of tensors (having shapes and types defined by dataset.output_shapes
+            and dataset.output_types) to a scalar tf.int32 tensor. Values should be in [0, num_classes).
+            """
+        # For simplicity, trying to return the label itself as I assume its numeric...
+
+        return label
+

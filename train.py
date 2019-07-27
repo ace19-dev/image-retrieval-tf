@@ -99,8 +99,8 @@ flags.DEFINE_string('dataset_dir',
 
 flags.DEFINE_integer('how_many_training_epochs', 80,
                      'How many training loops to run')
-flags.DEFINE_integer('batch_size', 32, 'batch size')
-flags.DEFINE_integer('val_batch_size', 32, 'validation batch size')
+flags.DEFINE_integer('batch_size', 24, 'batch size')
+flags.DEFINE_integer('val_batch_size', 24, 'validation batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
 flags.DEFINE_string('labels',
@@ -239,7 +239,9 @@ def main(unused_argv):
         tfrecord_filenames = tf.compat.v1.placeholder(tf.string, shape=[])
         tr_dataset = train_data.Dataset(tfrecord_filenames,
                                         FLAGS.batch_size,
+                                        num_classes,
                                         FLAGS.how_many_training_epochs,
+                                        TRAIN_DATA_SIZE,
                                         FLAGS.height,
                                         FLAGS.width)
         iterator = tr_dataset.dataset.make_initializable_iterator()
@@ -248,7 +250,9 @@ def main(unused_argv):
         # validation dateset
         val_dataset = val_data.Dataset(tfrecord_filenames,
                                        FLAGS.val_batch_size,
+                                       num_classes,
                                        FLAGS.how_many_training_epochs,
+                                       VALIDATE_DATA_SIZE,
                                        FLAGS.height,
                                        FLAGS.width)
         val_iterator = val_dataset.dataset.make_initializable_iterator()
@@ -305,10 +309,10 @@ def main(unused_argv):
                 for step in range(tr_batches):
                     filenames, train_batch_xs, train_batch_ys = sess.run(next_batch)
                     show_batch_data(filenames, train_batch_xs, train_batch_ys)
-
-                    augmented_batch_xs = aug_utils.aug(train_batch_xs)
-                    show_batch_data(filenames, augmented_batch_xs,
-                                    train_batch_ys, 'aug')
+                    #
+                    # augmented_batch_xs = aug_utils.aug(train_batch_xs)
+                    # show_batch_data(filenames, augmented_batch_xs,
+                    #                 train_batch_ys, 'aug')
 
                     # Run the graph with this batch of training data and learning rate policy.
                     lr, train_summary, train_accuracy, train_loss, _ = \
