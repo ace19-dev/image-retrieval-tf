@@ -64,10 +64,14 @@ flags.DEFINE_float('slow_start_learning_rate', 0.0001,
                    'Learning rate employed during slow start.')
 
 # Settings for fine-tuning the network.
-flags.DEFINE_string('saved_checkpoint_dir',
-                    # './tfmodels',
+# flags.DEFINE_string('saved_checkpoint_dir',
+#                     # './tfmodels',
+#                     None,
+#                     'Saved checkpoint dir.')
+flags.DEFINE_string('saved_checkpoint_path',
+                    # './tfmodels/best_resnet_v2_50.ckpt',
                     None,
-                    'Saved checkpoint dir.')
+                    'Saved checkpoint path.')
 flags.DEFINE_string('pre_trained_checkpoint',
                     'pre-trained/resnet_v2_50.ckpt',
                     # None,
@@ -112,6 +116,9 @@ flags.DEFINE_string('labels',
 # temporary constant
 TRAIN_DATA_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
 VALIDATE_DATA_SIZE = 46+68+50+107+38+81+114+38+91+41+86+70     # 830
+
+# global variable
+best_pred = 0.0
 
 
 def show_batch_data(filenames, batch_x, batch_y, additional_path=None):
@@ -273,12 +280,15 @@ def main(unused_argv):
 
             # Create a saver object which will save all the variables
             saver = tf.compat.v1.train.Saver()
-            if FLAGS.saved_checkpoint_dir:
-                if tf.gfile.IsDirectory(FLAGS.train_logdir):
-                    checkpoint_path = tf.train.latest_checkpoint(FLAGS.train_logdir)
-                else:
-                    checkpoint_path = FLAGS.train_logdir
-                saver.restore(sess, checkpoint_path)
+            # if FLAGS.saved_checkpoint_dir:
+            #     if tf.gfile.IsDirectory(FLAGS.train_logdir):
+            #         checkpoint_path = tf.train.latest_checkpoint(FLAGS.train_logdir)
+            #     else:
+            #         checkpoint_path = FLAGS.train_logdir
+            #     saver.restore(sess, checkpoint_path)
+
+            if FLAGS.saved_checkpoint_path:
+                saver.restore(sess, FLAGS.saved_checkpoint_path)
 
             if FLAGS.pre_trained_checkpoint:
                 train_utils.restore_fn(FLAGS)
@@ -335,6 +345,7 @@ def main(unused_argv):
                 tf.logging.info(' Start validation ')
                 tf.logging.info('--------------------------')
 
+                global best_pred
                 total_val_accuracy = 0
                 validation_count = 0
                 total_conf_matrix = None
@@ -372,14 +383,18 @@ def main(unused_argv):
 
                 # Save the model checkpoint periodically.
                 if (num_epoch <= FLAGS.how_many_training_epochs-1):
+                    if total_val_accuracy > best_pred:
+                        best_checkpoint_path = os.path.join(FLAGS.train_logdir, 'best_' + FLAGS.ckpt_name_to_save)
+                        tf.logging.info('Saving to "%s"', best_checkpoint_path)
+                        saver.save(sess, best_checkpoint_path)
+                        best_pred = total_val_accuracy
+
                     checkpoint_path = os.path.join(FLAGS.train_logdir, FLAGS.ckpt_name_to_save)
                     tf.logging.info('Saving to "%s-%d"', checkpoint_path, num_epoch)
                     saver.save(sess, checkpoint_path, global_step=num_epoch)
 
 
 if __name__ == '__main__':
-    if tf.io.gfile.exists(FLAGS.train_logdir):
-        tf.io.gfile.rmtree(FLAGS.train_logdir)
     tf.io.gfile.makedirs(FLAGS.train_logdir)
 
     tf.compat.v1.app.run()
