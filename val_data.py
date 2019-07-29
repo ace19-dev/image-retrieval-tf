@@ -18,7 +18,7 @@ class Dataset(object):
     Handles loading, partitioning, and preparing training data.
     """
 
-    def __init__(self, tfrecord_path, batch_size, num_epochs, height, width):
+    def __init__(self, tfrecord_path, batch_size, num_classes, num_epochs, data_size, height, width):
         self.resize_h = height
         self.resize_w = width
 
@@ -34,9 +34,8 @@ class Dataset(object):
 
         # Prefetches a batch at a time to smooth out the time taken to load input
         # files for shuffling and processing.
-        self.dataset = self.dataset.prefetch(buffer_size=batch_size)
-        self.dataset = self.dataset.shuffle(1000 + 3 * batch_size)
-
+        self.dataset = self.dataset.shuffle(buffer_size=(int(data_size * 0.4) + 3 * batch_size))
+        # self.dataset = self.dataset.shuffle(1000 + 3 * batch_size)
         self.dataset = self.dataset.repeat()
         self.dataset = self.dataset.batch(batch_size)
 
