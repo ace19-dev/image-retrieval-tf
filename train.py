@@ -11,7 +11,8 @@ import tensorflow as tf
 import model
 import train_data
 import val_data
-from utils import train_utils, aug_utils
+from utils import train_utils, aug_utils, train_helper
+from checkmate import BestCheckpointSaver, get_best_checkpoint
 
 # from slim.nets import inception_v4
 
@@ -20,6 +21,10 @@ slim = tf.contrib.slim
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
+
+# Multi GPU
+flags.DEFINE_integer('num_gpu', 1,
+                     'number of GPU')
 
 flags.DEFINE_string('train_logdir', './tfmodels',
                     'Where the checkpoint and logs are stored.')
@@ -159,61 +164,61 @@ def main(unused_argv):
         keep_prob = tf.compat.v1.placeholder(tf.float32, [], name='keep_prob')
         # learning_rate = tf.placeholder(tf.float32, [])
 
-        # apply SENet
-        logits, end_points = model.basic_model(X,
-                                               num_classes=num_classes,
-                                               is_training=is_training,
-                                               keep_prob=keep_prob,
-                                               attention_module='se_block')
-
-        # logits, features = model.deep_cosine_metric_learning(X,
-        #                                                      num_classes=num_classes,
-        #                                                      is_training=is_training,
-        #                                                      keep_prob=keep_prob,
-        #                                                      attention_module='se_block')
-
-
-        # Print name and shape of each tensor.
-        tf.logging.info("++++++++++++++++++++++++++++++++++")
-        tf.logging.info("Layers")
-        tf.logging.info("++++++++++++++++++++++++++++++++++")
-        for k, v in end_points.items():
-            tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
-
-        # # Print name and shape of parameter nodes  (values not yet initialized)
+        # # apply SENet
+        # logits, end_points = model.basic_model(X,
+        #                                        num_classes=num_classes,
+        #                                        is_training=is_training,
+        #                                        keep_prob=keep_prob,
+        #                                        attention_module='se_block')
+        #
+        # # logits, features = model.deep_cosine_metric_learning(X,
+        # #                                                      num_classes=num_classes,
+        # #                                                      is_training=is_training,
+        # #                                                      keep_prob=keep_prob,
+        # #                                                      attention_module='se_block')
+        #
+        #
+        # # Print name and shape of each tensor.
         # tf.logging.info("++++++++++++++++++++++++++++++++++")
-        # tf.logging.info("Parameters")
+        # tf.logging.info("Layers")
         # tf.logging.info("++++++++++++++++++++++++++++++++++")
-        # for v in slim.get_model_variables():
+        # for k, v in end_points.items():
         #     tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
-
-        prediction = tf.argmax(logits, axis=1, name='prediction')
-        correct_prediction = tf.equal(prediction, ground_truth)
-        confusion_matrix = tf.math.confusion_matrix(ground_truth,
-                                                    prediction,
-                                                    num_classes=num_classes)
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy')
-        # summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
-
-        # Define loss
-        tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=ground_truth,
-                                                         logits=logits)
-
-        # Gather update_ops. These contain, for example,
-        # the updates for the batch_norm variables created by model.
-        update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
-
+        #
+        # # # Print name and shape of parameter nodes  (values not yet initialized)
+        # # tf.logging.info("++++++++++++++++++++++++++++++++++")
+        # # tf.logging.info("Parameters")
+        # # tf.logging.info("++++++++++++++++++++++++++++++++++")
+        # # for v in slim.get_model_variables():
+        # #     tf.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+        #
+        # prediction = tf.argmax(logits, axis=1, name='prediction')
+        # correct_prediction = tf.equal(prediction, ground_truth)
+        # confusion_matrix = tf.math.confusion_matrix(ground_truth,
+        #                                             prediction,
+        #                                             num_classes=num_classes)
+        # accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy')
+        # # summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
+        #
+        # # Define loss
+        # tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=ground_truth,
+        #                                                  logits=logits)
+        #
+        # # Gather update_ops. These contain, for example,
+        # # the updates for the batch_norm variables created by model.
+        # update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
+        #
         # Gather initial summaries.
         summaries = set(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
-        summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
-
-        # Add summaries for model variables.
-        for variable in slim.get_model_variables():
-            summaries.add(tf.compat.v1.summary.histogram(variable.op.name, variable))
-
-        # Add summaries for losses.
-        for loss in tf.compat.v1.get_collection(tf.GraphKeys.LOSSES):
-            summaries.add(tf.compat.v1.summary.scalar('losses/%s' % loss.op.name, loss))
+        # summaries.add(tf.compat.v1.summary.scalar('accuracy', accuracy))
+        #
+        # # Add summaries for model variables.
+        # for variable in slim.get_model_variables():
+        #     summaries.add(tf.compat.v1.summary.histogram(variable.op.name, variable))
+        #
+        # # Add summaries for losses.
+        # for loss in tf.compat.v1.get_collection(tf.GraphKeys.LOSSES):
+        #     summaries.add(tf.compat.v1.summary.scalar('losses/%s' % loss.op.name, loss))
 
         learning_rate = train_utils.get_model_learning_rate(
             FLAGS.learning_policy, FLAGS.base_learning_rate,
@@ -222,22 +227,95 @@ def main(unused_argv):
             FLAGS.slow_start_step, FLAGS.slow_start_learning_rate)
         summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
-        # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
-        # optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
-        optimizer = tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
-        total_loss, grads_and_vars = train_utils.optimize(optimizer)
-        total_loss = tf.compat.v1.check_numerics(total_loss, 'Loss is inf or nan.')
-        summaries.add(tf.compat.v1.summary.scalar('total_loss', total_loss))
+        # TODO: multi gpu
+        optimizers = \
+            [tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum) for _ in range(FLAGS.num_gpu)]
 
-        # TensorBoard: How to plot histogram for gradients
-        # grad_summ_op = tf.summary.merge([tf.summary.histogram("%s-grad" % g[1].name, g[0]) for g in grads_and_vars])
+        # create network graph for training
+        logits = []
+        losses = []
+        grad_list = []
+        train_filename_batch = []
+        train_image_batch = []
+        train_label_batch = []
+        for gpu_idx in range(FLAGS.num_gpu):
+            tf.compat.v1.logging.info('creating gpu tower @ %d' % (gpu_idx + 1))
+            # image_tensor, label_tensor = self.enqueue_threads[gpu_idx].dequeue()
+            train_image_batch.append(X)
+            train_label_batch.append(ground_truth)
 
-        # Create gradient update op.
-        grad_updates = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
-        update_ops.append(grad_updates)
-        update_op = tf.group(*update_ops)
-        with tf.control_dependencies([update_op]):
-            train_op = tf.identity(total_loss, name='train_op')
+            scope_name = 'tower%d' % gpu_idx
+            with tf.device(tf.DeviceSpec(device_type="GPU", device_index=gpu_idx)), tf.variable_scope(scope_name):
+                logit, _ = model.basic_model(X,
+                                             num_classes=num_classes,
+                                             is_training=is_training,
+                                             is_reuse=False,
+                                             keep_prob=keep_prob,
+                                             attention_module='se_block')
+                logits.append(logit)
+
+                loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ground_truth,
+                                                                      logits=logit)
+                losses.append(loss)
+                loss_w_reg = tf.reduce_sum(loss) + tf.add_n(slim.losses.get_regularization_losses(scope=scope_name))
+
+                grad_list.append(
+                    [x for x in optimizers[gpu_idx].compute_gradients(loss_w_reg) if x[0] is not None])
+
+        output_train = tf.concat(logits, axis=0)
+        train_image_batch = tf.concat(train_image_batch, axis=0)
+        train_label_batch = tf.concat(train_label_batch, axis=0)
+
+        # loss
+        acc_train_top1 = tf.reduce_mean(
+            tf.cast(tf.nn.in_top_k(output_train, train_label_batch, k=1), dtype=tf.float32)
+        )
+        acc_train_top5 = tf.reduce_mean(
+            tf.cast(tf.nn.in_top_k(output_train, train_label_batch, k=5), dtype=tf.float32)
+        )
+        loss_train = tf.reduce_mean(losses)
+
+        # TODO: check.
+        prediction = tf.argmax(output_train, axis=1, name='prediction')
+        confusion_matrix = tf.math.confusion_matrix(train_label_batch,
+                                                    prediction,
+                                                    num_classes=num_classes)
+
+        # use NCCL
+        grads, all_vars = train_helper.split_grad_list(grad_list)
+        reduced_grad = train_helper.allreduce_grads(grads, average=True)
+        grads = train_helper.merge_grad_list(reduced_grad, all_vars)
+
+        # optimizer using NCCL
+        train_ops = []
+        for idx, grad_and_vars in enumerate(grads):
+            # apply_gradients may create variables. Make them LOCAL_VARIABLESZ¸¸¸¸¸¸
+            with tf.name_scope('apply_gradients'), tf.device(tf.DeviceSpec(device_type="GPU", device_index=idx)):
+                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='tower%d' % idx)
+                with tf.control_dependencies(update_ops):
+                    train_ops.append(
+                        optimizers[idx].apply_gradients(grad_and_vars, name='apply_grad_{}'.format(idx)))
+
+        optimize_op = tf.group(*train_ops, name='train_op')
+
+        sync_op = train_helper.get_post_init_ops()
+
+        # # optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+        # # optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
+        # optimizer = tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
+        # total_loss, grads_and_vars = train_utils.optimize(optimizer)
+        # total_loss = tf.compat.v1.check_numerics(total_loss, 'Loss is inf or nan.')
+        # summaries.add(tf.compat.v1.summary.scalar('total_loss', total_loss))
+        #
+        # # TensorBoard: How to plot histogram for gradients
+        # # grad_summ_op = tf.summary.merge([tf.summary.histogram("%s-grad" % g[1].name, g[0]) for g in grads_and_vars])
+        #
+        # # Create gradient update op.
+        # grad_updates = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
+        # update_ops.append(grad_updates)
+        # update_op = tf.group(*update_ops)
+        # with tf.control_dependencies([update_op]):
+        #     train_op = tf.identity(total_loss, name='train_op')
 
         ###############
         # Prepare data
@@ -287,6 +365,14 @@ def main(unused_argv):
             #         checkpoint_path = FLAGS.train_logdir
             #     saver.restore(sess, checkpoint_path)
 
+            # TODO: check below logic
+            # best_ckpt_saver = BestCheckpointSaver(
+            #     save_dir=FLAGS.saved_checkpoint_path,
+            #     num_to_keep=100,
+            #     maximize=False,
+            #     saver=saver
+            # )
+
             if FLAGS.saved_checkpoint_path:
                 saver.restore(sess, FLAGS.saved_checkpoint_path)
 
@@ -325,8 +411,8 @@ def main(unused_argv):
                     #                 train_batch_ys, 'aug')
 
                     # Run the graph with this batch of training data and learning rate policy.
-                    lr, train_summary, train_accuracy, train_loss, _ = \
-                        sess.run([learning_rate, summary_op, accuracy, total_loss, train_op],
+                    lr, train_summary, train_acc_top1, train_acc_top5, train_loss, _ = \
+                        sess.run([learning_rate, summary_op, acc_train_top1, acc_train_top5, loss_train, optimize_op],
                                  feed_dict={
                                      X: train_batch_xs,
                                      ground_truth: train_batch_ys,
@@ -335,8 +421,8 @@ def main(unused_argv):
                                  })
                     train_writer.add_summary(train_summary, num_epoch)
                     # train_writer.add_summary(grad_vals, num_epoch)
-                    tf.logging.info('Epoch #%d, Step #%d, rate %.10f, accuracy %.1f%%, loss %f' %
-                                    (num_epoch, step, lr, train_accuracy * 100, train_loss))
+                    tf.logging.info('Epoch #%d, Step #%d, rate %.6f, acc_top1=%.2f, acc_top5=%.2f, loss %.5f' %
+                                    (num_epoch, step, lr, train_acc_top1, acc_train_top5, train_loss))
 
                 ###################################################
                 # Validate the model on the validation set
@@ -354,13 +440,12 @@ def main(unused_argv):
                     filenames, validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
                     # show_batch_data(filenames, validation_batch_xs, validation_batch_ys)
 
-                    # # random augmentation for TTA
                     # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
                     # show_batch_data(filenames, augmented_val_batch_xs,
                     #                 validation_batch_ys, 'aug')
 
-                    val_summary, val_accuracy, conf_matrix = sess.run(
-                        [summary_op, accuracy, confusion_matrix],
+                    val_summary, val_acc_top1, val_acc_top5, conf_matrix = sess.run(
+                        [summary_op, acc_train_top1, acc_train_top5, confusion_matrix],
                         feed_dict={
                             X: validation_batch_xs,
                             ground_truth: validation_batch_ys,
@@ -369,7 +454,7 @@ def main(unused_argv):
                         })
                     validation_writer.add_summary(val_summary, num_epoch)
 
-                    total_val_accuracy += val_accuracy
+                    total_val_accuracy += val_acc_top1
                     validation_count += 1
                     if total_conf_matrix is None:
                         total_conf_matrix = conf_matrix
