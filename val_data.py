@@ -75,7 +75,7 @@ class Dataset(object):
         image = tf.image.random_brightness(image, max_delta=1.3)
         image = tf.image.random_contrast(image, lower=0.7, upper=1.3)
         # image = tf.image.random_hue(image, max_delta=0.04)
-        # image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
+        image = tf.image.random_saturation(image, lower=0.7, upper=1.3)
         # image = tf.image.resize(image, [self.resize_h, self.resize_w])
 
         return filename, image, label

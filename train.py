@@ -97,7 +97,7 @@ flags.DEFINE_string('dataset_dir',
                     '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized',
                     'Where the dataset reside.')
 
-flags.DEFINE_integer('how_many_training_epochs', 80,
+flags.DEFINE_integer('how_many_training_epochs', 100,
                      'How many training loops to run')
 flags.DEFINE_integer('batch_size', 32, 'batch size')
 flags.DEFINE_integer('val_batch_size', 32, 'validation batch size')
