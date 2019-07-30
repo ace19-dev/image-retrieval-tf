@@ -23,8 +23,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 # Multi GPU
-flags.DEFINE_integer('num_gpu', 2,
-                     'number of GPU')
+flags.DEFINE_integer('num_gpu', 2, 'number of GPU')
 
 flags.DEFINE_string('train_logdir', './tfmodels',
                     'Where the checkpoint and logs are stored.')
