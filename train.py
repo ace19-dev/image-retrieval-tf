@@ -121,6 +121,8 @@ flags.DEFINE_string('labels',
 TRAIN_DATA_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
 VALIDATE_DATA_SIZE = 46+68+50+107+38+81+114+38+91+41+86+70     # 830
 
+TEN_CROP = 10
+
 
 def show_batch_data(filenames, batch_x, batch_y, additional_path=None):
     default_path = '/home/ace19/Pictures/'
@@ -194,6 +196,7 @@ def main(unused_argv):
             [tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum) for _ in range(FLAGS.num_gpu)]
 
         logits = []
+        logits_tencrop = []
         losses = []
         grad_list = []
         filename_batch = []
@@ -218,11 +221,13 @@ def main(unused_argv):
                 #                                                      is_training=is_training,
                 #                                                      keep_prob=keep_prob,
                 #                                                      attention_module='se_block')
-
+                logit = tf.cond(is_training,
+                                lambda: tf.identity(logit),
+                                lambda: tf.reduce_mean(tf.reshape(logit, [FLAGS.val_batch_size, TEN_CROP, -1]), axis=1))
                 logits.append(logit)
 
                 l = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ground_truth,
-                                                                      logits=logit)
+                                                                   logits=logit)
                 losses.append(l)
                 loss_w_reg = tf.reduce_sum(l) + tf.add_n(slim.losses.get_regularization_losses(scope=scope_name))
 
@@ -401,16 +406,21 @@ def main(unused_argv):
                 sess.run(val_iterator.initializer, feed_dict={tfrecord_filenames: validate_record_filenames})
                 for step in range(val_batches):
                     filenames, validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
-                    # show_batch_data(filenames, validation_batch_xs, validation_batch_ys)
+                    # TTA
+                    batch_size, n_crops, c, h, w = validation_batch_xs.shape
+                    # fuse batch size and ncrops
+                    tencrop_val_batch_xs = np.reshape(validation_batch_xs, (-1, c, h, w))
+                    # show_batch_data(filenames, tencrop_val_batch_xs, validation_batch_ys)
 
-                    # augmented_val_batch_xs = aug_utils.aug(validation_batch_xs)
+                    # augmented_val_batch_xs = aug_utils.aug(tencrop_val_batch_xs)
                     # show_batch_data(filenames, augmented_val_batch_xs,
                     #                 validation_batch_ys, 'aug')
 
+                    # TODO: Verify TTA(TenCrop)
                     val_summary, val_loss, val_top1_acc, _confusion_matrix = sess.run(
                         [summary_op, loss, top1_acc, confusion_matrix],
                         feed_dict={
-                            X: validation_batch_xs,
+                            X: tencrop_val_batch_xs,
                             ground_truth: validation_batch_ys,
                             is_training: False,
                             keep_prob: 1.0
