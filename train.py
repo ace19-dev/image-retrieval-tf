@@ -283,7 +283,7 @@ def main(unused_argv):
             saver=saver
         )
         best_val_loss = 99999
-        best_val_acc1 = 0
+        best_val_acc = 0
 
         start_epoch = 0
         epoch_count = tf.Variable(start_epoch, trainable=False)
@@ -382,7 +382,7 @@ def main(unused_argv):
                                  })
                     train_writer.add_summary(train_summary, num_epoch)
                     # train_writer.add_summary(grad_vals, num_epoch)
-                    tf.compat.v1.logging.info('Epoch #%d, Step #%d, rate %.6f, acc_top1=%.3f, loss %.5f' %
+                    tf.compat.v1.logging.info('Epoch #%d, Step #%d, rate %.6f, top1_acc=%.3f, loss %.5f' %
                                     (num_epoch, step, lr, train_top1_acc, train_loss))
 
                 ###################################################
@@ -433,7 +433,7 @@ def main(unused_argv):
                 # total_val_accuracy /= val_count
                 tf.compat.v1.logging.info('Confusion Matrix:\n %s' % total_conf_matrix)
                 tf.compat.v1.logging.info('Validation loss = %.5f' % total_val_losses)
-                tf.compat.v1.logging.info('Validation accuracy = %.3f%% (N=%d)' %
+                tf.compat.v1.logging.info('Validation top1 accuracy = %.3f%% (N=%d)' %
                                 (total_val_top1_acc, VALIDATE_DATA_SIZE))
 
                 # Save the model checkpoint periodically.
@@ -447,14 +447,14 @@ def main(unused_argv):
 
                     if best_val_loss > total_val_losses:
                         best_val_loss = total_val_losses
-                        best_val_acc1 = total_val_top1_acc
+                        best_val_acc = total_val_top1_acc
 
                     # periodic synchronization
                     sess.run(sync_op)
 
             chk_path = get_best_checkpoint(FLAGS.train_logdir, select_maximum_value=False)
-            tf.compat.v1.logging.info('training done. best_model val_loss=%.5f, top1=%.3f, ckpt=%s' % (
-                best_val_loss, best_val_acc1, chk_path))
+            tf.compat.v1.logging.info('training done. best_model val_loss=%.5f, top1_acc=%.3f, ckpt=%s' % (
+                best_val_loss, best_val_acc, chk_path))
 
 
 if __name__ == '__main__':
