@@ -24,13 +24,14 @@ def allreduce_grads(all_grads, average=True):
     Returns:
         K x N: same as input, but each grad is replaced by the average over K devices.
     """
-    from tensorflow.contrib import nccl
+    # from tensorflow.contrib import nccl
+    from tensorflow.python.ops import nccl_ops
     nr_tower = len(all_grads)
     if nr_tower == 1:
         return all_grads
     new_all_grads = []  # N x K
     for grads in zip(*all_grads):
-        summed = nccl.all_sum(grads)
+        summed = nccl_ops.all_sum(grads)
 
         grads_for_devices = []  # K
         for g in summed:

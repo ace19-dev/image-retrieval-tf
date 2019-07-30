@@ -21,7 +21,7 @@ batch_norm_params = {
 def basic_model(inputs,
                 num_classes,
                 is_training=True,
-                is_resue=False,
+                is_reuse=False,
                 keep_prob=0.8,
                 attention_module=None,
                 scope='basic_model'):
@@ -35,7 +35,7 @@ def basic_model(inputs,
             resnet_v2.resnet_v2_50(inputs,
                                    num_classes=num_classes,
                                    is_training=is_training,
-                                   reuse=is_resue,
+                                   reuse=is_reuse,
                                    attention_module=attention_module,
                                    scope='resnet_v2_50')
 
