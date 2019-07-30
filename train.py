@@ -196,7 +196,6 @@ def main(unused_argv):
             [tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum) for _ in range(FLAGS.num_gpu)]
 
         logits = []
-        logits_tencrop = []
         losses = []
         grad_list = []
         filename_batch = []
