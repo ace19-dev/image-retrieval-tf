@@ -63,7 +63,7 @@ flags.DEFINE_boolean('initialize_last_layer', True,
                      'Initialize the last layer.')
 flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
-flags.DEFINE_integer('slow_start_step', 0,
+flags.DEFINE_integer('slow_start_step', 146,
                      'Training model with small learning rate for few steps.')
 flags.DEFINE_float('slow_start_learning_rate', 0.0001,
                    'Learning rate employed during slow start.')
@@ -106,7 +106,7 @@ flags.DEFINE_string('dataset_dir',
                     '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized',
                     'Where the dataset reside.')
 
-flags.DEFINE_integer('how_many_training_epochs', 30,
+flags.DEFINE_integer('how_many_training_epochs', 100,
                      'How many training loops to run')
 flags.DEFINE_integer('batch_size', 128, 'batch size')
 flags.DEFINE_integer('val_batch_size', 128, 'validation batch size')
@@ -265,7 +265,8 @@ def main(unused_argv):
                 update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='tower%d' % idx)
                 with tf.control_dependencies(update_ops):
                     train_ops.append(
-                        optimizers[idx].apply_gradients(grad_and_vars, name='apply_grad_{}'.format(idx)))
+                        optimizers[idx].apply_gradients(grad_and_vars, name='apply_grad_{}'.format(idx), global_step=global_step)
+                    )
                 # TODO:
                 # TensorBoard: How to plot histogram for gradients
                 # grad_summ_op = tf.summary.merge([tf.summary.histogram("%s-grad" % g[1].name, g[0]) for g in grads_and_vars])
