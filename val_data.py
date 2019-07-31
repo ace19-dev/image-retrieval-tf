@@ -10,7 +10,7 @@ import random
 MEAN=[0.485, 0.456, 0.406]
 STD=[0.229, 0.224, 0.225]
 
-RANDOM_CROP_SIZE = 200
+RANDOM_CROP_SIZE = 224
 
 
 class Dataset(object):
@@ -90,7 +90,7 @@ class Dataset(object):
         images = []
         for i in range(5):
             img = tf.random_crop(image, [RANDOM_CROP_SIZE, RANDOM_CROP_SIZE, 3])
-            img = tf.image.resize(img, [self.resize_h, self.resize_w])
+            # img = tf.image.resize(img, [self.resize_h, self.resize_w])
             images.append(img)
             images.append(tf.image.flip_left_right(img))
 

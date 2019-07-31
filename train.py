@@ -45,7 +45,7 @@ flags.DEFINE_float('base_learning_rate', 0.0002,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
-flags.DEFINE_float('learning_rate_decay_step', .500,
+flags.DEFINE_float('learning_rate_decay_step', .100,
                    'Decay the base learning rate at a fixed step.')
 flags.DEFINE_float('learning_power', 0.9,
                    'The power value used in the poly learning policy.')
@@ -62,7 +62,7 @@ flags.DEFINE_boolean('initialize_last_layer', True,
                      'Initialize the last layer.')
 flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
-flags.DEFINE_integer('slow_start_step', 210,
+flags.DEFINE_integer('slow_start_step', 300,
                      'Training model with small learning rate for few steps.')
 flags.DEFINE_float('slow_start_learning_rate', 0.00002,
                    'Learning rate employed during slow start.')
@@ -339,8 +339,8 @@ def main(unused_argv):
                                            num_classes,
                                            FLAGS.how_many_training_epochs,
                                            VALIDATE_DATA_SIZE,
-                                           FLAGS.height,
-                                           FLAGS.width)
+                                           256, # 256 ~ 480
+                                           256)
             val_iterator = val_dataset.dataset.make_initializable_iterator()
             val_next_batch = val_iterator.get_next()
 
