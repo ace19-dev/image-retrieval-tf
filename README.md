@@ -2,9 +2,9 @@
 
 
 ## TODO
-- [On progress] Multi GPU
-- TTA
-- [On progress] Balanced Batch
+- [testing...] Multi GPU
+- [testing...] TTA
+- [developing...] Balanced Batch
 
 ## References
 - https://github.com/ildoonet/tf-mobilenet-v2

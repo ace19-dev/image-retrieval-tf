@@ -10,6 +10,8 @@ import random
 MEAN=[0.485, 0.456, 0.406]
 STD=[0.229, 0.224, 0.225]
 
+RANDOM_CROP_SIZE = 200
+
 
 class Dataset(object):
     """
@@ -30,6 +32,7 @@ class Dataset(object):
         # of the self.dataset.
         self.dataset = self.dataset.map(self.decode, num_parallel_calls=8)
         # self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
+        self.dataset = self.dataset.map(self.tencrop, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
@@ -78,6 +81,20 @@ class Dataset(object):
         # image = tf.image.resize(image, [self.resize_h, self.resize_w])
 
         return filename, image, label
+
+
+    def tencrop(self, filename, image, label):
+        """Placeholder for TenCrop
+        horizontal flipping is used by default
+        """
+        images = []
+        for i in range(5):
+            img = tf.random_crop(image, [RANDOM_CROP_SIZE, RANDOM_CROP_SIZE, 3])
+            img = tf.image.resize(img, [self.resize_h, self.resize_w])
+            images.append(img)
+            images.append(tf.image.flip_left_right(img))
+
+        return filename, tf.stack(images), label
 
 
     def normalize(self, filename, image, label):
