@@ -386,7 +386,7 @@ def main(unused_argv):
                                  })
                     train_writer.add_summary(train_summary, num_epoch)
                     # train_writer.add_summary(grad_vals, num_epoch)
-                    tf.compat.v1.logging.info('Epoch #%d, Step #%d, rate %.6f, top1_acc=%.3f, loss %.5f' %
+                    tf.compat.v1.logging.info('Epoch #%d, Step #%d, rate %.6f, top1_acc %.3f%%, loss %.5f' %
                                     (num_epoch, step, lr, train_top1_acc, train_loss))
 
                 ###################################################
@@ -398,7 +398,6 @@ def main(unused_argv):
 
                 total_val_losses = 0.0
                 total_val_top1_acc = 0.0
-                # total_val_accuracy = 0
                 val_count = 0
                 total_conf_matrix = None
 
@@ -462,7 +461,7 @@ def main(unused_argv):
                         best_val_acc = total_val_top1_acc
 
             chk_path = get_best_checkpoint(FLAGS.train_logdir, select_maximum_value=False)
-            tf.compat.v1.logging.info('training done. best_model val_loss=%.5f, top1_acc=%.3f, ckpt=%s' % (
+            tf.compat.v1.logging.info('training done. best_model val_loss=%.5f, top1_acc=%.3f%%, ckpt=%s' % (
                 best_val_loss, best_val_acc, chk_path))
 
 
