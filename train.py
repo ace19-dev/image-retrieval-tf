@@ -237,7 +237,7 @@ def main(unused_argv):
         image_batch = tf.concat(image_batch, axis=0)
         gt_batch = tf.concat(gt_batch, axis=0)
 
-        # loss
+        # Acc
         top1_acc = tf.reduce_mean(
             tf.cast(tf.nn.in_top_k(y_hat, gt_batch, k=1), dtype=tf.float32)
         )
@@ -278,6 +278,7 @@ def main(unused_argv):
 
         sync_op = train_helper.get_post_init_ops()
 
+
         # Create a saver object which will save all the variables
         saver = tf.compat.v1.train.Saver()
         best_ckpt_saver = BestCheckpointSaver(
@@ -292,6 +293,31 @@ def main(unused_argv):
         start_epoch = 0
         epoch_count = tf.Variable(start_epoch, trainable=False)
         epoch_count_add = tf.assign(epoch_count, epoch_count + 1)
+
+        ###############
+        # Prepare data
+        ###############
+        # training dateset
+        tr_dataset = train_data.Dataset(tfrecord_filenames,
+                                        FLAGS.batch_size // FLAGS.num_gpu,
+                                        num_classes,
+                                        FLAGS.how_many_training_epochs,
+                                        TRAIN_DATA_SIZE,
+                                        FLAGS.height,
+                                        FLAGS.width)
+        iterator = tr_dataset.dataset.make_initializable_iterator()
+        next_batch = iterator.get_next()
+
+        # validation dateset
+        val_dataset = val_data.Dataset(tfrecord_filenames,
+                                       FLAGS.val_batch_size // FLAGS.num_gpu,
+                                       num_classes,
+                                       FLAGS.how_many_training_epochs,
+                                       VALIDATE_DATA_SIZE,
+                                       256,  # 256 ~ 480
+                                       256)
+        val_iterator = val_dataset.dataset.make_initializable_iterator()
+        val_next_batch = val_iterator.get_next()
 
         sess_config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
         with tf.compat.v1.Session(config = sess_config) as sess:
@@ -317,32 +343,6 @@ def main(unused_argv):
                 train_utils.restore_fn(FLAGS)
 
             sess.run(sync_op)
-
-
-            ###############
-            # Prepare data
-            ###############
-            # training dateset
-            tr_dataset = train_data.Dataset(tfrecord_filenames,
-                                            FLAGS.batch_size // FLAGS.num_gpu,
-                                            num_classes,
-                                            FLAGS.how_many_training_epochs,
-                                            TRAIN_DATA_SIZE,
-                                            FLAGS.height,
-                                            FLAGS.width)
-            iterator = tr_dataset.dataset.make_initializable_iterator()
-            next_batch = iterator.get_next()
-
-            # validation dateset
-            val_dataset = val_data.Dataset(tfrecord_filenames,
-                                           FLAGS.val_batch_size // FLAGS.num_gpu,
-                                           num_classes,
-                                           FLAGS.how_many_training_epochs,
-                                           VALIDATE_DATA_SIZE,
-                                           256, # 256 ~ 480
-                                           256)
-            val_iterator = val_dataset.dataset.make_initializable_iterator()
-            val_next_batch = val_iterator.get_next()
 
             # Get the number of training/validation steps per epoch
             tr_batches = int(TRAIN_DATA_SIZE / (FLAGS.batch_size // FLAGS.num_gpu))
