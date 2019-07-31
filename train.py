@@ -339,8 +339,8 @@ def main(unused_argv):
                                            num_classes,
                                            FLAGS.how_many_training_epochs,
                                            VALIDATE_DATA_SIZE,
-                                           FLAGS.height,
-                                           FLAGS.width)
+                                           250,
+                                           250)
             val_iterator = val_dataset.dataset.make_initializable_iterator()
             val_next_batch = val_iterator.get_next()
 
