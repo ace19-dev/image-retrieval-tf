@@ -10,7 +10,7 @@ import random
 MEAN=[0.485, 0.456, 0.406]
 STD=[0.229, 0.224, 0.225]
 
-RANDOM_CROP_SIZE = 224
+RANDOM_CROP_SIZE = 200
 
 
 class Dataset(object):

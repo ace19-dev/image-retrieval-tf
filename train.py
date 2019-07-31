@@ -222,7 +222,7 @@ def main(unused_argv):
                 #                                                      attention_module='se_block')
                 logit = tf.cond(is_training,
                                 lambda: tf.identity(logit),
-                                lambda: tf.reduce_mean(tf.reshape(logit, [FLAGS.val_batch_size, TEN_CROP, -1]), axis=1))
+                                lambda: tf.reduce_mean(tf.reshape(logit, [FLAGS.val_batch_size // FLAGS.num_gpu, TEN_CROP, -1]), axis=1))
                 logits.append(logit)
 
                 l = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ground_truth,
