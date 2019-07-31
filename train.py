@@ -41,7 +41,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.0003,
+flags.DEFINE_float('base_learning_rate', 0.0002,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -64,7 +64,7 @@ flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
 flags.DEFINE_integer('slow_start_step', 210,
                      'Training model with small learning rate for few steps.')
-flags.DEFINE_float('slow_start_learning_rate', 0.00003,
+flags.DEFINE_float('slow_start_learning_rate', 0.00002,
                    'Learning rate employed during slow start.')
 
 # Settings for fine-tuning the network.
