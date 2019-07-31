@@ -332,15 +332,15 @@ def main(unused_argv):
             train_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir, graph)
             validation_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/validation', graph)
 
+            if FLAGS.pre_trained_checkpoint:
+                train_utils.restore_fn(FLAGS)
+
             if FLAGS.saved_checkpoint_dir:
                 if tf.gfile.IsDirectory(FLAGS.saved_checkpoint_dir):
                     checkpoint_path = tf.train.latest_checkpoint(FLAGS.saved_checkpoint_dir)
                 else:
                     checkpoint_path = FLAGS.saved_checkpoint_dir
                 saver.restore(sess, checkpoint_path)
-
-            if FLAGS.pre_trained_checkpoint:
-                train_utils.restore_fn(FLAGS)
 
             sess.run(sync_op)
 
@@ -445,6 +445,9 @@ def main(unused_argv):
                 tf.compat.v1.logging.info('Validation top1 accuracy = %.3f%% (N=%d)' %
                                 (total_val_top1_acc, VALIDATE_DATA_SIZE))
 
+                # periodic synchronization
+                sess.run(sync_op)
+
                 # Save the model checkpoint periodically.
                 if (num_epoch <= FLAGS.how_many_training_epochs-1):
                     # best_checkpoint_path = os.path.join(FLAGS.train_logdir, 'best_' + FLAGS.ckpt_name_to_save)
@@ -457,9 +460,6 @@ def main(unused_argv):
                     if best_val_loss > total_val_losses:
                         best_val_loss = total_val_losses
                         best_val_acc = total_val_top1_acc
-
-                    # periodic synchronization
-                    sess.run(sync_op)
 
             chk_path = get_best_checkpoint(FLAGS.train_logdir, select_maximum_value=False)
             tf.compat.v1.logging.info('training done. best_model val_loss=%.5f, top1_acc=%.3f, ckpt=%s' % (
