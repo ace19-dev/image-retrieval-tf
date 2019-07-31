@@ -90,7 +90,7 @@ class Dataset(object):
         images = []
         for i in range(5):
             img = tf.random_crop(image, [RANDOM_CROP_SIZE, RANDOM_CROP_SIZE, 3])
-            # img = tf.image.resize(img, [self.resize_h, self.resize_w])
+            img = tf.image.resize(img, [self.resize_h, self.resize_w])
             images.append(img)
             images.append(tf.image.flip_left_right(img))
 
