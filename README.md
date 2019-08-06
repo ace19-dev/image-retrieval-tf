@@ -19,3 +19,4 @@ The upper three row are correct and last row is incorrect.
 ## References from 
 - https://arxiv.org/abs/1812.00442
 - https://github.com/nwojke/cosine_metric_learning
+- https://github.com/kobiso/SENet-tensorflow-slim

@@ -20,34 +20,34 @@ FLAGS = flags.FLAGS
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/modelnet',
+                    '/home/ace19/dl_data/materials',
                     'Where the dataset reside.')
 
 flags.DEFINE_string('output_dir',
-                    '/home/ace19/dl_data/modelnet/retrieval_result',
+                    '/home/ace19/dl_results/image_retrieve/_result',
                     'Where the dataset reside.')
 
 flags.DEFINE_string('checkpoint_path',
-                    '../models',
+                    '../tfmodels',
                     'Directory where to read training checkpoints.')
 
 flags.DEFINE_integer('batch_size', 32, 'batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
-flags.DEFINE_string('labels',
-                    'airplane,bed,bookshelf,toilet,vase',
-                    'number of classes')
+# flags.DEFINE_string('labels',
+#                     'airplane,bed,bookshelf,toilet,vase',
+#                     'number of classes')
 
-# retrieval params
-flags.DEFINE_float('max_cosine_distance', 0.2,
-                   'Gating threshold for cosine distance')
-flags.DEFINE_string('nn_budget', None,
-                    'Maximum size of the appearance descriptors gallery. '
-                    'If None, no budget is enforced.')
+# # retrieval params
+# flags.DEFINE_float('max_cosine_distance', 0.2,
+#                    'Gating threshold for cosine distance')
+# flags.DEFINE_string('nn_budget', None,
+#                     'Maximum size of the appearance descriptors gallery. '
+#                     'If None, no budget is enforced.')
 
 
 MODELNET_GALLERY_SIZE = 2525
-MODELNET_QUERY_SIZE = 25
+MODELNET_QUERY_SIZE = 300
 
 TOP_N = 5
 RESULT_PATH = '/home/ace19/dl_result/image_retrieve/_result'
