@@ -1,33 +1,9 @@
-'''
-input: image - [1, FLAGS.num_views, FLAGS.height, FLAGS.width, 3]
-output: nearest neighbor image. apply deep cosine metric
-        TODO: how build a candiate images to compare in all data? or
-        TODO: just find a one of them which is included input image categories?
-
-When training is finished,
-the classifier is stripped of the network and distance queries are
-made using cosine similarity or Euclidean distance on the final layer of the network.
-
-Deep metric learning approaches encode notion of similarity directly into the training objective.
-
-When the feature encoder is trained with the classifier jointly by minimization of the
-cross-entropy loss, the parameters of the encoder network are adapted to
-push samples away from the decision boundary as far as possible.
-
-Cosine Softmax Classifier
-
-The final l2 normalization projects features onto the unit hypersphere
-for application of the cosine softmax classifier.
-
-'''
-
-import cv2
-import matplotlib.pyplot as plt
-
-import datetime
 import os
-import csv
+import cv2
 import numpy as np
+
+import matplotlib.pyplot as plt
+from PIL import Image
 
 import tensorflow as tf
 
@@ -73,84 +49,56 @@ flags.DEFINE_string('nn_budget', None,
 MODELNET_GALLERY_SIZE = 2525
 MODELNET_QUERY_SIZE = 25
 
-NUM_TOP = 3
+TOP_N = 5
+RESULT_PATH = '/home/ace19/dl_result/image_retrieve/_result'
 
 
-# TODO
-def display_retrieval(top_indices, gallery_path_list, query_path_list):
-    tf.logging.info('write retrieval -> \n')
-    top_indi_list = top_indices.tolist()
-    for idx, indice in enumerate(top_indi_list):
-        query = query_path_list[idx]
-        tf.logging.info('query %d ==> %s ' % (idx, query))
-        gallery = gallery_path_list[indice]
-        tf.logging.info('gallery %d indice ==> %s ' % (indice, gallery))
-        tf.logging.info('++++++++++++\n')
+def _print_distances(distance_matrix, top_n_indice):
+    distances = []
+    num_row, num_col = top_n_indice.shape
+    for r in range(num_row):
+        col = []
+        for c in range(num_col):
+            col.append(distance_matrix[r, top_n_indice[r,c]])
+        distances.append(col)
 
-    # settings
-    w, h = 30, 30  # for raster image
-    columns = 8
-    rows = 2
-
-    tf.logging.info('display images -> \n')
-    top_indi_list = top_indices.tolist()
-    for idx, indice in enumerate(top_indi_list):
-        fig = plt.figure(figsize=(w,h))
-        # fig.suptitle("Query images and Gallery images", fontsize=16)
-
-        query = query_path_list[idx]
-        # subplot1 = fig.add_subplot(111)
-        p = query[0].decode("utf-8")
-        title = p.split('/')[-1].split('.')[0]
-        # subplot1.set_title('query_' + str(idx) + 'th [' + title + ']')
-        ax = []
-        for i, path in enumerate(query):
-            path = path.decode("utf-8")
-            img = cv2.imread(path)
-            # create subplot and append to ax
-            ax.append(fig.add_subplot(rows, columns, i+1))
-            label = path.split('/')[-1]
-            ax[-1].set_title(label)  # set title
-            plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-
-        gallery = gallery_path_list[indice]
-        # subplot2 = fig.add_subplot(111)
-        # p2 = gallery[0].decode("utf-8")
-        # title2 = p2.split('/')[-1].split('.')[0]
-        # subplot2.set_title('gallery_' + str(indice) + 'th [' + title2 + ']')
-        ax2 = []
-        for j, path2 in enumerate(gallery):
-            path2 = path2.decode("utf-8")
-            img2 = cv2.imread(path2)
-            # create subplot and append to ax
-            ax2.append(fig.add_subplot(rows, columns, i+1+j+1))
-            label2 = path2.split('/')[-1]
-            ax2[-1].set_title(label2)  # set title
-            plt.imshow(cv2.cvtColor(img2, cv2.COLOR_BGR2RGB))
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(FLAGS.output_dir, 'query-' + title))
-        plt.show()
-        plt.close(fig)
+    return distances
 
 
-# TODO: get value from indices
-# TODO: get top-N indices
-def match(galleries, queries):
+def match_n(top_n, galleries, queries):
     # The distance metric used for measurement to query.
-    metric = matching.NearestNeighborDistanceMetric("cosine", FLAGS.max_cosine_distance)
+    metric = matching.NearestNeighborDistanceMetric("cosine")
     distance_matrix = metric.distance(queries, galleries)
-    top_indice = np.argmin(distance_matrix, axis=1)
 
-    # get value from indice
-    # idx = np.argpartition(a, range(M))[:, :-M - 1:-1]  # topM_ind
-    # out = a[np.arange(a.shape[0])[:, None], idx]  # topM_score
-    # out_top1 = matrix[np.arange(matrix.shape[0])[:, None], top_indice]
-    return top_indice
+    # top_indice = np.argmin(distance_matrix, axis=1)
+    # top_n_indice = np.argpartition(distance_matrix, top_n, axis=1)[:, :top_n]
+    # top_n_dist = _print_distances(distance_matrix, top_n_indice)
+    # top_n_indice2 = np.argsort(top_n_dist, axis=1)
+    # dist2 = _print_distances(distance_matrix, top_n_indice2)
 
-    # Top-N indices
-    # top_indices = np.argpartition(matrix, NUM_TOP, axis=1)[:, :NUM_TOP]
-    # return top_indices
+    # TODO: need improvement.
+    top_n_indice = np.argsort(distance_matrix, axis=1)[:, :top_n]
+    top_n_distance = _print_distances(distance_matrix, top_n_indice)
+
+    return top_n_indice, top_n_distance
+
+
+def show_retrieval_result(top_n_indice, top_n_distance, gallery_path_list, query_path_list):
+    col = top_n_indice.shape[1]
+    for row_idx, query_img_path in enumerate(query_path_list):
+        fig, axes = plt.subplots(ncols=6, figsize=(15, 4))
+        # fig.suptitle(query_img_path.split('/')[-1], fontsize=12, fontweight='bold')
+        axes[0].set_title(query_img_path.split('/')[-1], color='r', fontweight='bold')
+        axes[0].imshow(Image.open(query_img_path))
+
+        for i in range(col):
+            img_path = gallery_path_list[top_n_indice[row_idx, i]]
+            axes[i+1].set_title(img_path.split('/')[-1])
+            axes[i+1].imshow(Image.open(img_path))
+        # plt.show()
+        print(" Retrieval result {} create.".format(row_idx+1))
+        fig.savefig(os.path.join(RESULT_PATH, query_img_path.split('/')[-1]))
+        plt.close()
 
 
 def main(unused_argv):
@@ -209,9 +157,11 @@ def main(unused_argv):
         # TODO: It is better to create encode func which replace below codes
         # TODO: +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        # gallery images
         gallery_features_list = []
         gallery_path_list = []
+        query_features_list = []
+        query_path_list = []
+
         sess.run(iterator.initializer, feed_dict={tfrecord_filenames: gallery_tf_filenames})
         for i in range(batches_gallery):
             gallery_batch_xs, gallery_paths = sess.run(next_batch)
@@ -257,11 +207,18 @@ def main(unused_argv):
             query_features_list.extend(_f)
             query_path_list.extend(query_paths)
 
-        # matching
-        top_indices = match(gallery_features_list, query_features_list)
+        if len(query_features_list) == 0:
+            print('No query data!!')
+            return
 
-        # display top 5 image correspond to target
-        display_retrieval(top_indices, gallery_path_list, query_path_list)
+        # matching
+        top_n_indice, top_n_distance = \
+            match_n(TOP_N,
+                    torch.stack(gallery_features_list).cpu(),
+                    torch.stack(query_features_list).cpu())
+
+        # Show n images from the gallery similar to the query image.
+        show_retrieval_result(top_n_indice, top_n_distance, gallery_path_list, query_path_list)
 
 
 if __name__ == '__main__':

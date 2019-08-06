@@ -209,12 +209,12 @@ def main(unused_argv):
             scope_name = 'tower%d' % gpu_idx
             with tf.device(tf.DeviceSpec(device_type="GPU", device_index=gpu_idx)), tf.variable_scope(scope_name):
                 # apply SENet
-                logit, _ = model.basic_model(X,
-                                             num_classes=num_classes,
-                                             is_training=is_training,
-                                             is_reuse=False,
-                                             keep_prob=keep_prob,
-                                             attention_module='se_block')
+                _, logit = model.deep_cosine_softmax(X,
+                                                    num_classes=num_classes,
+                                                    is_training=is_training,
+                                                    is_reuse=False,
+                                                    keep_prob=keep_prob,
+                                                    attention_module='se_block')
                 # logits, features = model.deep_cosine_metric_learning(X,
                 #                                                      num_classes=num_classes,
                 #                                                      is_training=is_training,
@@ -382,7 +382,7 @@ def main(unused_argv):
                                      X: train_batch_xs,
                                      ground_truth: train_batch_ys,
                                      is_training: True,
-                                     keep_prob: 0.7
+                                     keep_prob: 0.6
                                  })
                     train_writer.add_summary(train_summary, num_epoch)
                     # train_writer.add_summary(grad_vals, num_epoch)

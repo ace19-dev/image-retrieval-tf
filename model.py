@@ -64,6 +64,7 @@ def basic_model(inputs,
 def deep_cosine_softmax(inputs,
                         num_classes,
                         is_training=True,
+                        is_reuse=False,
                         keep_prob=0.8,
                         attention_module=None,
                         scope=''):
@@ -80,13 +81,14 @@ def deep_cosine_softmax(inputs,
             resnet_v2.resnet_v2_50(inputs,
                                    num_classes=num_classes,
                                    is_training=is_training,
+                                   reuse=is_reuse,
                                    attention_module=attention_module,
                                    scope='resnet_v2_50')
 
     # ##############################
     # cosine-softmax
     # ##############################
-    # (?,7,7,2048)
+    # (?,1,1,2048)
     feature_dim = net.get_shape().as_list()[-1]
     print("feature dimensionality: ", feature_dim)
     net = slim.flatten(net)
@@ -100,11 +102,10 @@ def deep_cosine_softmax(inputs,
 
     features = net
 
-    # TODO: check shape
     # Features in rows, normalize axis 1.
     features = tf.nn.l2_normalize(features, dim=1)
 
-    with slim.variable_scope.variable_scope("ball", reuse=None):
+    with slim.variable_scope.variable_scope("ball", reuse=is_reuse):
         weights = slim.model_variable(
             "mean_vectors", (feature_dim, int(num_classes)),
             initializer=tf.truncated_normal_initializer(stddev=1e-3),
@@ -120,4 +121,4 @@ def deep_cosine_softmax(inputs,
     weights_normed = tf.nn.l2_normalize(weights, dim=0)
     logits = scale * tf.matmul(features, weights_normed)
 
-    return logits, features  # use it for retrieval.
+    return features, logits
