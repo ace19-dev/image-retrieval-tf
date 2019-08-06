@@ -215,11 +215,7 @@ def main(unused_argv):
                                                     is_reuse=False,
                                                     keep_prob=keep_prob,
                                                     attention_module='se_block')
-                # logits, features = model.deep_cosine_metric_learning(X,
-                #                                                      num_classes=num_classes,
-                #                                                      is_training=is_training,
-                #                                                      keep_prob=keep_prob,
-                #                                                      attention_module='se_block')
+
                 logit = tf.cond(is_training,
                                 lambda: tf.identity(logit),
                                 lambda: tf.reduce_mean(tf.reshape(logit, [FLAGS.val_batch_size // FLAGS.num_gpu, TEN_CROP, -1]), axis=1))

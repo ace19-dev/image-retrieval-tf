@@ -90,7 +90,7 @@ def deep_cosine_softmax(inputs,
     # ##############################
     # (?,1,1,2048)
     feature_dim = net.get_shape().as_list()[-1]
-    print("feature dimensionality: ", feature_dim)
+    # print("feature dimensionality: ", feature_dim)
     net = slim.flatten(net)
 
     net = slim.dropout(net, keep_prob=keep_prob)
@@ -114,7 +114,7 @@ def deep_cosine_softmax(inputs,
             "scale", (), tf.float32,
             initializer=tf.constant_initializer(0., tf.float32),
             regularizer=slim.l2_regularizer(1e-1))
-        tf.summary.scalar("scale", scale)
+        # tf.summary.scalar("scale", scale)
         scale = tf.nn.softplus(scale)
 
     # Mean vectors in colums, normalize axis 0.
