@@ -213,9 +213,7 @@ def main(unused_argv):
 
         # matching
         top_n_indice, top_n_distance = \
-            match_n(TOP_N,
-                    torch.stack(gallery_features_list).cpu(),
-                    torch.stack(query_features_list).cpu())
+            match_n(TOP_N, tf.stack(gallery_features_list), tf.stack(query_features_list))
 
         # Show n images from the gallery similar to the query image.
         show_retrieval_result(top_n_indice, top_n_distance, gallery_path_list, query_path_list)
