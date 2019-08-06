@@ -21,7 +21,7 @@ batch_norm_params = {
 def basic_model(inputs,
                 num_classes,
                 is_training=True,
-                is_reuse=False,
+                is_reuse=tf.compat.v1.AUTO_REUSE,
                 keep_prob=0.8,
                 attention_module=None,
                 scope='basic_model'):
@@ -64,8 +64,8 @@ def basic_model(inputs,
 def deep_cosine_softmax(inputs,
                         num_classes,
                         is_training=True,
-                        is_reuse=False,
-                        keep_prob=0.8,
+                        is_reuse=tf.compat.v1.AUTO_REUSE,
+                        keep_prob=0.6,
                         attention_module=None,
                         scope=''):
 
