@@ -15,13 +15,13 @@ from datasets import dataset_utils
 
 flags = tf.app.flags
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized/classes',
+                    '/home/ace19/dl_data/materials',
                     'Root Directory to dataset.')
 flags.DEFINE_string('output_path',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized/validate.record',
+                    '/home/ace19/dl_data/materials/train.record',
                     'Path to output TFRecord')
 flags.DEFINE_string('dataset_category',
-                    'validate',
+                    'train',
                     'dataset category, train|validate|test')
 
 FLAGS = flags.FLAGS
@@ -29,9 +29,11 @@ FLAGS = flags.FLAGS
 
 def get_label_map(label_to_index):
     label_map = {}
-    cls_lst = os.listdir(FLAGS.dataset_dir)
+    # cls_lst = os.listdir(FLAGS.dataset_dir)
+    cls_path = os.path.join(FLAGS.dataset_dir, FLAGS.dataset_category)
+    cls_lst = os.listdir(cls_path)
     for i, cls in enumerate(cls_lst):
-        data_path = os.path.join(FLAGS.dataset_dir, cls, FLAGS.dataset_category)
+        data_path = os.path.join(cls_path, cls)
         img_lst = os.listdir(data_path)
         for n, img in enumerate(img_lst):
             img_path = os.path.join(data_path, img)
@@ -58,7 +60,8 @@ def dict_to_tf_example(image_name,
     Raises:
       ValueError: if the image pointed to by image is not a valid PNG
     """
-    full_path = os.path.join(dataset_directory, image_subdirectory, image_name)
+    # full_path = os.path.join(dataset_directory, image_subdirectory, image_name)
+    full_path = os.path.join(dataset_directory, image_name)
     with tf.io.gfile.GFile(full_path, 'rb') as fid:
         encoded = fid.read()
     encoded_io = io.BytesIO(encoded)
@@ -97,22 +100,23 @@ def main(_):
 
     options = tf.io.TFRecordOptions(tf.io.TFRecordCompressionType.GZIP)
     writer = tf.io.TFRecordWriter(FLAGS.output_path, options=options)
-    # writer = tf.io.TFRecordWriter(FLAGS.output_path)
 
-    dataset_lst = os.listdir(FLAGS.dataset_dir)
-    dataset_lst.sort()
+    # cls_lst = os.listdir(FLAGS.dataset_dir)
+    dataset_lst = os.path.join(FLAGS.dataset_dir, FLAGS.dataset_category)
+    cls_lst = os.listdir(dataset_lst)
+    cls_lst.sort()
     label_to_index = {}
-    for i, cls in enumerate(dataset_lst):
-        cls_path = os.path.join(FLAGS.dataset_dir, cls)
+    for i, cls in enumerate(cls_lst):
+        cls_path = os.path.join(dataset_lst, cls)
         if os.path.isdir(cls_path):
             label_to_index[cls] = i
 
     label_map = get_label_map(label_to_index)
 
-    random.shuffle(dataset_lst)
-    for i, cls in enumerate(dataset_lst):
-        cls_path = os.path.join(FLAGS.dataset_dir, cls)
-        img_lst = os.listdir(os.path.join(cls_path, FLAGS.dataset_category))
+    random.shuffle(cls_lst)
+    for i, cls in enumerate(cls_lst):
+        cls_path = os.path.join(dataset_lst, cls)
+        img_lst = os.listdir(cls_path)
 
         total = len(img_lst)
         for idx, image in enumerate(img_lst):

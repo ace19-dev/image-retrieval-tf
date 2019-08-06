@@ -111,10 +111,14 @@ flags.DEFINE_integer('batch_size', 128, 'batch size')
 flags.DEFINE_integer('val_batch_size', 128, 'validation batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
+# flags.DEFINE_string('labels',
+#                     'Black_grass,Charlock,Cleavers,Common_Chickweed,Common_wheat,Fat_Hen,'
+#                     'Loose_Silky_bent,Maize,Scentless_Mayweed,Shepherds_Purse,'
+#                     'Small_flowered_Cranesbill,Sugar_beet',
+#                     'Labels to use')
 flags.DEFINE_string('labels',
-                    'Black_grass,Charlock,Cleavers,Common_Chickweed,Common_wheat,Fat_Hen,'
-                    'Loose_Silky_bent,Maize,Scentless_Mayweed,Shepherds_Purse,'
-                    'Small_flowered_Cranesbill,Sugar_beet',
+                    '01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,'
+                    '21,22,23,24,25,26,27,28,29,30'
                     'Labels to use')
 
 # temporary constant
