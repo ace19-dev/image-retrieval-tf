@@ -22,7 +22,7 @@ slim = tf.contrib.slim
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
-# Multi GPU
+# Multi GPU - Must be a value of 1 or greater
 flags.DEFINE_integer('num_gpu', 2, 'number of GPU')
 
 flags.DEFINE_string('train_logdir', './tfmodels',
@@ -118,7 +118,7 @@ flags.DEFINE_integer('width', 224, 'width')
 #                     'Labels to use')
 flags.DEFINE_string('labels',
                     '01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,'
-                    '21,22,23,24,25,26,27,28,29,30'
+                    '21,22,23,24,25,26,27,28,29,30',
                     'Labels to use')
 
 # temporary constant
@@ -250,6 +250,7 @@ def main(unused_argv):
         confusion_matrix = tf.math.confusion_matrix(gt_batch,
                                                     prediction,
                                                     num_classes=num_classes)
+        confusion_matrix = tf.div(confusion_matrix, FLAGS.num_gpu)
 
         loss = tf.reduce_mean(losses)
         loss = tf.compat.v1.check_numerics(loss, 'Loss is inf or nan.')
