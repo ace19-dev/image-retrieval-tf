@@ -47,7 +47,7 @@ flags.DEFINE_integer('width', 224, 'width')
 #                     'If None, no budget is enforced.')
 
 
-MODELNET_GALLERY_SIZE = 2525
+MODELNET_GALLERY_SIZE = 43955
 MODELNET_QUERY_SIZE = 300
 
 TOP_N = 5
