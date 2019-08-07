@@ -148,25 +148,25 @@ def main(unused_argv):
 
     # Prepare query source data
     tfrecord_filenames = tf.placeholder(tf.string, shape=[])
-    train_dataset = train_data.Dataset(tfrecord_filenames,
+    gallery_dataset = train_data.Dataset(tfrecord_filenames,
                                        FLAGS.batch_size,
                                        num_classes,
                                        None,
                                        MODELNET_GALLERY_SIZE,
                                        FLAGS.height,
                                        FLAGS.width)
-    train_iterator = train_dataset.dataset.make_initializable_iterator()
-    train_next_batch = train_iterator.get_next()
+    gallery_iterator = gallery_dataset.dataset.make_initializable_iterator()
+    gallery_next_batch = gallery_iterator.get_next()
 
-    _dataset = retrieval_data.Dataset(tfrecord_filenames,
-                                      FLAGS.batch_size,
-                                      num_classes,
-                                      None,
-                                      MODELNET_QUERY_SIZE,
-                                      256,  # 256 ~ 480
-                                      256)
-    iterator = _dataset.dataset.make_initializable_iterator()
-    next_batch = iterator.get_next()
+    query_dataset = retrieval_data.Dataset(tfrecord_filenames,
+                                           FLAGS.batch_size,
+                                           num_classes,
+                                           None,
+                                           MODELNET_QUERY_SIZE,
+                                           256,  # 256 ~ 480
+                                           256)
+    query_iterator = query_dataset.dataset.make_initializable_iterator()
+    query_next_batch = query_iterator.get_next()
 
 
 
@@ -201,9 +201,9 @@ def main(unused_argv):
 
         gallery_features_list = []
         gallery_path_list = []
-        sess.run(train_iterator.initializer, feed_dict={tfrecord_filenames: gallery_tf_filenames})
+        sess.run(gallery_iterator.initializer, feed_dict={tfrecord_filenames: gallery_tf_filenames})
         for i in range(batches_gallery):
-            filenames, gallery_batch_xs, gallery_batch_ys = sess.run(train_next_batch)
+            filenames, gallery_batch_xs, gallery_batch_ys = sess.run(gallery_next_batch)
             # show_batch_data(filenames, gallery_batch_xs, gallery_batch_ys)
 
             # (10,512)
@@ -216,9 +216,9 @@ def main(unused_argv):
         # query images
         query_features_list = []
         query_path_list = []
-        sess.run(iterator.initializer, feed_dict={tfrecord_filenames: query_tf_filenames})
+        sess.run(query_iterator.initializer, feed_dict={tfrecord_filenames: query_tf_filenames})
         for i in range(batches_query):
-            filenames, query_batch_xs, query_batch_ys  = sess.run(next_batch)
+            filenames, query_batch_xs, query_batch_ys  = sess.run(query_next_batch)
             # show_batch_data(filenames, query_batch_xs, query_batch_ys)
 
             # TTA
