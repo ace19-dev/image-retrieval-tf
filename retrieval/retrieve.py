@@ -10,6 +10,7 @@ import tensorflow as tf
 from retrieval import retrieval_data, matching
 from utils import aug_utils
 import model
+import train_data
 
 
 slim = tf.contrib.slim
@@ -50,7 +51,28 @@ MODELNET_GALLERY_SIZE = 2525
 MODELNET_QUERY_SIZE = 300
 
 TOP_N = 5
-RESULT_PATH = '/home/ace19/dl_result/image_retrieve/_result'
+TEN_CROP = 10
+
+
+def show_batch_data(filenames, batch_x, batch_y, additional_path=None):
+    default_path = '/home/ace19/Pictures/'
+    if additional_path is not None:
+        default_path = os.path.join(default_path, additional_path)
+        if not os.path.exists(default_path):
+            os.makedirs(default_path)
+
+    assert not np.any(np.isnan(batch_x))
+
+    n_batch = batch_x.shape[0]
+    # n_view = batch_x.shape[1]
+    for i in range(n_batch):
+        img = batch_x[i]
+        # scipy.misc.toimage(img).show() Or
+        img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
+        cv2.imwrite(os.path.join(default_path, str(i) + '.png'), img)
+        # cv2.imshow(str(batch_y[idx]), img)
+        cv2.waitKey(100)
+        cv2.destroyAllWindows()
 
 
 def _print_distances(distance_matrix, top_n_indice):
@@ -97,7 +119,7 @@ def show_retrieval_result(top_n_indice, top_n_distance, gallery_path_list, query
             axes[i+1].imshow(Image.open(img_path))
         # plt.show()
         print(" Retrieval result {} create.".format(row_idx+1))
-        fig.savefig(os.path.join(RESULT_PATH, query_img_path.split('/')[-1]))
+        fig.savefig(os.path.join(FLAGS.output_dir, query_img_path.split('/')[-1]))
         plt.close()
 
 
@@ -108,25 +130,45 @@ def main(unused_argv):
     num_classes = len(labels)
 
     # Define the model
-    X = tf.placeholder(tf.float32,
-                       [None, FLAGS.num_views, FLAGS.height, FLAGS.width, 3],
-                       name='X')
+    X = tf.compat.v1.placeholder(tf.float32,
+                                 [None, FLAGS.height, FLAGS.width, 3],
+                                 name='X')
+    is_training = tf.compat.v1.placeholder(tf.bool, name='is_training')
+    keep_prob = tf.compat.v1.placeholder(tf.float32, [], name='keep_prob')
 
-    _, features = model.deep_cosine_metric_learning(X,
-                                                    num_classes,
-                                                    is_training=False,
-                                                    keep_prob=1.0,
-                                                    attention_module='se_block')
+    features, _ = model.deep_cosine_softmax(X,
+                                            num_classes=num_classes,
+                                            is_training=is_training,
+                                            is_reuse=False,
+                                            keep_prob=keep_prob,
+                                            attention_module='se_block')
+    features = tf.cond(is_training,
+                       lambda: tf.identity(features),
+                       lambda: tf.reduce_mean(tf.reshape(features, [FLAGS.batch_size, TEN_CROP, -1]), axis=1))
 
     # Prepare query source data
     tfrecord_filenames = tf.placeholder(tf.string, shape=[])
+    train_dataset = train_data.Dataset(tfrecord_filenames,
+                                       FLAGS.batch_size,
+                                       num_classes,
+                                       None,
+                                       MODELNET_GALLERY_SIZE,
+                                       FLAGS.height,
+                                       FLAGS.width)
+    train_iterator = train_dataset.dataset.make_initializable_iterator()
+    train_next_batch = train_iterator.get_next()
+
     _dataset = retrieval_data.Dataset(tfrecord_filenames,
-                                      FLAGS.num_views,
-                                      FLAGS.height,
-                                      FLAGS.width,
-                                      FLAGS.batch_size)
+                                      FLAGS.batch_size,
+                                      num_classes,
+                                      None,
+                                      MODELNET_QUERY_SIZE,
+                                      256,  # 256 ~ 480
+                                      256)
     iterator = _dataset.dataset.make_initializable_iterator()
     next_batch = iterator.get_next()
+
+
 
     sess_config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
     with tf.Session(config=sess_config) as sess:
@@ -159,53 +201,37 @@ def main(unused_argv):
 
         gallery_features_list = []
         gallery_path_list = []
-        query_features_list = []
-        query_path_list = []
-
-        sess.run(iterator.initializer, feed_dict={tfrecord_filenames: gallery_tf_filenames})
+        sess.run(train_iterator.initializer, feed_dict={tfrecord_filenames: gallery_tf_filenames})
         for i in range(batches_gallery):
-            gallery_batch_xs, gallery_paths = sess.run(next_batch)
-            # # Verify image
-            # n_batch = gallery_batch_xs.shape[0]
-            # for i in range(n_batch):
-            #     img = gallery_batch_xs[i]
-            #     # scipy.misc.toimage(img).show()
-            #     # Or
-            #     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
-            #     cv2.imwrite('/home/ace19/Pictures/' + str(i) + '.png', img)
-            #     # cv2.imshow(str(fnames), img)
-            #     cv2.waitKey(100)
-            #     cv2.destroyAllWindows()
-
-            augmented_batch_xs = aug_utils.aug(gallery_batch_xs)
+            filenames, gallery_batch_xs, gallery_batch_ys = sess.run(train_next_batch)
+            # show_batch_data(filenames, gallery_batch_xs, gallery_batch_ys)
 
             # (10,512)
-            _f = sess.run(features, feed_dict={X: augmented_batch_xs})
+            _f = sess.run(features, feed_dict={X: gallery_batch_xs,
+                                               is_training:True,
+                                               keep_prob: 1.0})
             gallery_features_list.extend(_f)
-            gallery_path_list.extend(gallery_paths)
+            gallery_path_list.extend(filenames)
 
         # query images
         query_features_list = []
         query_path_list = []
         sess.run(iterator.initializer, feed_dict={tfrecord_filenames: query_tf_filenames})
         for i in range(batches_query):
-            query_batch_xs, query_paths = sess.run(next_batch)
-            # # Verify image
-            # n_batch = query_batch_xs.shape[0]
-            # for i in range(n_batch):
-            #     img = query_batch_xs[i]
-            #     # scipy.misc.toimage(img).show()
-            #     # Or
-            #     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB)
-            #     cv2.imwrite('/home/ace19/Pictures/' + str(i) + '.png', img)
-            #     # cv2.imshow(str(fnames), img)
-            #     cv2.waitKey(100)
-            #     cv2.destroyAllWindows()
+            filenames, query_batch_xs, query_batch_ys  = sess.run(next_batch)
+            # show_batch_data(filenames, query_batch_xs, query_batch_ys)
+
+            # TTA
+            batch_size, n_crops, c, h, w = query_batch_xs.shape
+            # fuse batch size and ncrops
+            tencrop_query_batch_xs = np.reshape(query_batch_xs, (-1, c, h, w))
 
             # (10,512)
-            _f = sess.run(features, feed_dict={X: query_batch_xs})
+            _f = sess.run(features, feed_dict={X: tencrop_query_batch_xs,
+                                               is_training:False,
+                                               keep_prob: 1.0})
             query_features_list.extend(_f)
-            query_path_list.extend(query_paths)
+            query_path_list.extend(filenames)
 
         if len(query_features_list) == 0:
             print('No query data!!')

@@ -13,10 +13,11 @@ The upper three row are correct and last row is incorrect.
 
 
 ## dataset
-- download_images.py (about 20GB) from https://www.kaggle.com/c/imaterialist-challenge-furniture-2018
-- https://www.kaggle.com/aloisiodn/python-3-download-multi-proc-prog-bar-resume
+- https://www.kaggle.com/c/imaterialist-challenge-furniture-2018
+- download_images.py (about 20GB) from https://www.kaggle.com/aloisiodn/python-3-download-multi-proc-prog-bar-resume Or datasets/download_images.py
 
 ## References from 
 - https://arxiv.org/abs/1812.00442
 - https://github.com/nwojke/cosine_metric_learning
 - https://github.com/kobiso/SENet-tensorflow-slim
+- https://github.com/vonclites/checkmate/blob/master/checkmate.py

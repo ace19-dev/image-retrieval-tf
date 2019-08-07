@@ -214,11 +214,11 @@ def main(unused_argv):
             with tf.device(tf.DeviceSpec(device_type="GPU", device_index=gpu_idx)), tf.variable_scope(scope_name):
                 # apply SENet
                 _, logit = model.deep_cosine_softmax(X,
-                                                    num_classes=num_classes,
-                                                    is_training=is_training,
-                                                    is_reuse=False,
-                                                    keep_prob=keep_prob,
-                                                    attention_module='se_block')
+                                                     num_classes=num_classes,
+                                                     is_training=is_training,
+                                                     is_reuse=False,
+                                                     keep_prob=keep_prob,
+                                                     attention_module='se_block')
 
                 logit = tf.cond(is_training,
                                 lambda: tf.identity(logit),
