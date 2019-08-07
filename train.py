@@ -102,7 +102,7 @@ flags.DEFINE_boolean('ignore_missing_vars',
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized',
+                    '/home/ace19/dl_data/materials',
                     'Where the dataset reside.')
 
 flags.DEFINE_integer('how_many_training_epochs', 100,
