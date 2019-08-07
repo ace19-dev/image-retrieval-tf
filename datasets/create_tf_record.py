@@ -18,10 +18,10 @@ flags.DEFINE_string('dataset_dir',
                     '/home/ace19/dl_data/materials',
                     'Root Directory to dataset.')
 flags.DEFINE_string('output_path',
-                    '/home/ace19/dl_data/materials/train.record',
+                    '/home/ace19/dl_data/materials/validate.record',
                     'Path to output TFRecord')
 flags.DEFINE_string('dataset_category',
-                    'train',
+                    'validate',
                     'dataset category, train|validate|test')
 
 FLAGS = flags.FLAGS

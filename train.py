@@ -122,8 +122,8 @@ flags.DEFINE_string('labels',
                     'Labels to use')
 
 # temporary constant
-TRAIN_DATA_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
-VALIDATE_DATA_SIZE = 46+68+50+107+38+81+114+38+91+41+86+70     # 830
+TRAIN_DATA_SIZE = 43955
+VALIDATE_DATA_SIZE = 1358
 
 TEN_CROP = 10
 
