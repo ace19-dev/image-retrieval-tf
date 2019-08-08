@@ -345,6 +345,8 @@ def main(unused_argv):
                     checkpoint_path = FLAGS.saved_checkpoint_dir
                 saver.restore(sess, checkpoint_path)
 
+            # global_step = checkpoint_path.split('/')[-1].split('-')[-1]
+
             sess.run(sync_op)
 
             # Get the number of training/validation steps per epoch
