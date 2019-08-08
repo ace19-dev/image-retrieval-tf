@@ -11,6 +11,8 @@ The upper three row are correct and last row is incorrect.
 ![](assets/1168_38.jpg)
 ![](assets/1596_38.jpg)
 
+## TODO
+- balanced sampling
 
 ## dataset
 - https://www.kaggle.com/c/imaterialist-challenge-furniture-2018
