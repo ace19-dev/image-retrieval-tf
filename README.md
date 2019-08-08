@@ -22,3 +22,5 @@
 - https://github.com/kobiso/SENet-tensorflow-slim
 - https://github.com/vonclites/checkmate/blob/master/checkmate.py
 - https://github.com/tensorflow/models/blob/master/research/inception/inception/image_processing.py
+- https://github.com/ildoonet/tf-mobilenet-v2
+- http://openresearch.ai/t/nccl-efficient-tensorflow-multigpu-training/159
