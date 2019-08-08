@@ -315,7 +315,7 @@ def restore_fn(flags):
     #
     # Warn the user if a checkpoint exists in the train_dir. Then ignore.
     # if tf.train.latest_checkpoint(flags.train_dir):
-    #     tf.logging.info(
+    #     tf.compat.v1.logging.info(
     #         'Ignoring --checkpoint_path because a checkpoint already exists in %s'
     #         % flags.train_dir)
     #     return None
@@ -344,7 +344,7 @@ def restore_fn(flags):
 
     slim.assign_from_checkpoint_fn(flags.pre_trained_checkpoint,
                                    variables_to_restore)
-    tf.logging.info('Fine-tuning from %s. Ignoring missing vars: %s' %
+    tf.compat.v1.logging.info('Fine-tuning from %s. Ignoring missing vars: %s' %
                     (flags.pre_trained_checkpoint, flags.ignore_missing_vars))
 
 

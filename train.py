@@ -41,7 +41,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.003,
+flags.DEFINE_float('base_learning_rate', 0.002,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -62,7 +62,7 @@ flags.DEFINE_boolean('initialize_last_layer', True,
                      'Initialize the last layer.')
 flags.DEFINE_boolean('last_layers_contain_logits_only', False,
                      'Only consider logits as last layers or not.')
-flags.DEFINE_integer('slow_start_step', 686,
+flags.DEFINE_integer('slow_start_step', 0,
                      'Training model with small learning rate for few steps.')
 flags.DEFINE_float('slow_start_learning_rate', 0.0003,
                    'Learning rate employed during slow start.')
@@ -77,8 +77,8 @@ flags.DEFINE_string('saved_checkpoint_dir',
 #                     None,
 #                     'Saved checkpoint path.')
 flags.DEFINE_string('pre_trained_checkpoint',
-                    # 'pre-trained/resnet_v2_50.ckpt',
-                    None,
+                    'pre-trained/resnet_v2_50.ckpt',
+                    # None,
                     'The pre-trained checkpoint in tensorflow format.')
 flags.DEFINE_string('checkpoint_exclude_scopes',
                     'resnet_v2_50/logits,resnet_v2_50/SpatialSqueeze,resnet_v2_50/predictions',
