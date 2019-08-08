@@ -31,7 +31,7 @@ class Dataset(object):
         # The map transformation takes a function and applies it to every element
         # of the self.dataset.
         self.dataset = self.dataset.map(self.decode, num_parallel_calls=8)
-        self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
+        # self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.tencrop, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
