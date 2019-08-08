@@ -34,7 +34,7 @@ class Dataset(object):
         # The map transformation takes a function and applies it to every element
         # of the dataset.
         self.dataset = self.dataset.map(self.decode, num_parallel_calls=8)
-        self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
+        self.dataset = self.dataset.map(self.distort_image, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
         # The shuffle transformation uses a finite-sized buffer to shuffle elements
@@ -70,7 +70,7 @@ class Dataset(object):
         filename = features['image/fullpath']
         # Convert from a scalar string tensor to a float32 tensor with shape
         image_decoded = tf.image.decode_png(features['image/encoded'], channels=3)
-        image = tf.image.resize(image_decoded, [self.resize_h, self.resize_w])
+        image = tf.image.convert_image_dtype(image_decoded, dtype=tf.float32)
 
         # Convert label from a scalar uint8 tensor to an int32 scalar.
         label = tf.cast(features['image/class/label'], tf.int64)
@@ -78,30 +78,45 @@ class Dataset(object):
         return filename, image, label
 
 
-    def augment(self, filename, image, label):
-        """Placeholder for data augmentation.
+    def distort_image(self, filename, image, label):
+        """Prepare one image for training.
         """
-        # image = tf.image.central_crop(image, 0.9)
-        # image = tf.image.random_flip_up_down(image)
+        # This resizing operation may distort the images because the aspect
+        # ratio is not respected. We select a resize method based on the random number.
+        # Note that ResizeMethod contains 4 enumerated resizing methods.
+        resize_method = random.randint(0, 3)
+        image = tf.image.resize(image, [self.resize_h, self.resize_w],
+                                method=resize_method)
+        # Randomly flip the image horizontally.
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.rot90(image, k=random.randint(0,4))
-        # paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
-        # image = tf.pad(image, paddings, "CONSTANT")
-        image = tf.image.random_brightness(image, max_delta=1.2)
-        image = tf.image.random_contrast(image, lower=0.8, upper=1.2)
-        # # image = tf.image.random_hue(image, max_delta=0.04)
-        image = tf.image.random_saturation(image, lower=0.8, upper=1.2)
-        # image = tf.image.resize(image, [self.resize_h, self.resize_w])
+
+        # Randomly distort the colors.
+        color_ordering = random.randint(0, 1)
+        if color_ordering == 0:
+            image = tf.image.random_brightness(image, max_delta=32. / 255.)
+            image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+            image = tf.image.random_hue(image, max_delta=0.2)
+            image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+        elif color_ordering == 1:
+            image = tf.image.random_brightness(image, max_delta=32. / 255.)
+            image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+            image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+            image = tf.image.random_hue(image, max_delta=0.2)
+
+        # The random_* ops do not necessarily clamp.
+        image = tf.clip_by_value(image, 0.0, 1.0)
 
         return filename, image, label
 
 
     def normalize(self, filename, image, label):
-        # """Convert `image` from [0, 255] -> [-0.5, 0.5] floats."""
-        # image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
+        # Finally, rescale to [-1,1] instead of [0, 1)
+        image = tf.subtract(image, 0.5)
+        image = tf.multiply(image, 2.0)
 
         # input[channel] = (input[channel] - mean[channel]) / std[channel]
-        return filename, tf.div(tf.subtract(image, MEAN), STD), label
+        # return filename, tf.div(tf.subtract(image, MEAN), STD), label
+        return filename, image, label
 
 
     def class_mapping_function(self, filename, image, label):

@@ -31,7 +31,7 @@ class Dataset(object):
         # The map transformation takes a function and applies it to every element
         # of the self.dataset.
         self.dataset = self.dataset.map(self.decode, num_parallel_calls=8)
-        # self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
+        # self.dataset = self.dataset.map(self.eval, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.tencrop, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
@@ -57,7 +57,8 @@ class Dataset(object):
         filename = features['image/fullpath']
         # Convert from a scalar string tensor to a float32 tensor with shape
         image_decoded = tf.image.decode_png(features['image/encoded'], channels=3)
-        image = tf.image.resize(image_decoded, [self.resize_h, self.resize_w])
+        image = tf.image.convert_image_dtype(image_decoded, dtype=tf.float32)
+        image = tf.image.resize(image, [self.resize_h, self.resize_w])
 
         # Convert label from a scalar uint8 tensor to an int32 scalar.
         label = tf.cast(features['image/class/label'], tf.int64)
@@ -65,41 +66,43 @@ class Dataset(object):
         return filename, image, label
 
 
-    def augment(self, filename, image, label):
-        """Placeholder for data augmentation.
+    def eval(self, filename, image, label):
+        """Prepare one image for evaluation.
         """
-        # image = tf.image.central_crop(image, 0.9)
-        # image = tf.image.random_flip_up_down(image)
-        image = tf.image.random_flip_left_right(image)
-        image = tf.image.rot90(image, k=random.randint(0,4))
-        # paddings = tf.constant([[11, 11], [11, 11], [0, 0]])  # 224
-        # image = tf.pad(image, paddings, "CONSTANT")
-        image = tf.image.random_brightness(image, max_delta=1.2)
-        image = tf.image.random_contrast(image, lower=0.8, upper=1.2)
-        # image = tf.image.random_hue(image, max_delta=0.04)
-        image = tf.image.random_saturation(image, lower=0.8, upper=1.2)
-        # image = tf.image.resize(image, [self.resize_h, self.resize_w])
+        # Crop the central region of the image with an area containing 87.5% of
+        # the original image.
+        image = tf.image.central_crop(image, central_fraction=0.875)
+        # Resize the image to the height and width.
+        image = tf.expand_dims(image, 0)
+        image = tf.image.resize(image, [self.resize_h, self.resize_w])
+        image = tf.squeeze(image, [0])
 
         return filename, image, label
 
 
     def tencrop(self, filename, image, label):
-        """Placeholder for TenCrop
-        horizontal flipping is used by default
+        """Prepare one image for TenCrop
         """
+        flip_mode = random.randint(0, 1)
+
         images = []
         for i in range(5):
-            img = tf.random_crop(image, [RANDOM_CROP_SIZE, RANDOM_CROP_SIZE, 3])
-            # img = tf.image.resize(img, [self.resize_h, self.resize_w])
-            images.append(img)
-            images.append(tf.image.flip_left_right(img))
+            image = tf.random_crop(image, [RANDOM_CROP_SIZE, RANDOM_CROP_SIZE, 3])
+            image = tf.cast(image, tf.float32)
+            images.append(image)
+            if flip_mode == 0:
+                images.append(tf.image.random_flip_left_right(image))
+            if flip_mode == 1:
+                images.append(tf.image.random_flip_up_down(image))
 
         return filename, tf.stack(images), label
 
 
     def normalize(self, filename, image, label):
-        # """Convert `image` from [0, 255] -> [-0.5, 0.5] floats."""
-        # image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
+        # Finally, rescale to [-1,1] instead of [0, 1)
+        image = tf.subtract(image, 0.5)
+        image = tf.multiply(image, 2.0)
 
         # input[channel] = (input[channel] - mean[channel]) / std[channel]
-        return filename, tf.div(tf.subtract(image, MEAN), STD), label
+        # return filename, tf.div(tf.subtract(image, MEAN), STD), label
+        return filename, image, label
