@@ -41,7 +41,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.003,
+flags.DEFINE_float('base_learning_rate', 0.002,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -72,10 +72,6 @@ flags.DEFINE_string('saved_checkpoint_dir',
                     # './tfmodels',
                     None,
                     'Saved checkpoint dir.')
-# flags.DEFINE_string('saved_checkpoint_path',
-#                     # './tfmodels/best_resnet_v2_50.ckpt',
-#                     None,
-#                     'Saved checkpoint path.')
 flags.DEFINE_string('pre_trained_checkpoint',
                     'pre-trained/resnet_v2_50.ckpt',
                     # None,
@@ -172,12 +168,6 @@ def main(unused_argv):
         # for k, v in end_points.items():
         #     tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
         #
-        # # # Print name and shape of parameter nodes  (values not yet initialized)
-        # # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-        # # tf.compat.v1.logging.info("Parameters")
-        # # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-        # # for v in slim.get_model_variables():
-        # #     tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
         # Gather initial summaries.
         summaries = set(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
@@ -219,6 +209,14 @@ def main(unused_argv):
                                                      is_reuse=False,
                                                      keep_prob=keep_prob,
                                                      attention_module='se_block')
+
+                # Print name and shape of parameter nodes  (values not yet initialized)
+                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                tf.compat.v1.logging.info("Parameters")
+                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                for v in slim.get_model_variables():
+                    tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+
                 # TTA
                 logit = tf.cond(is_training,
                                 lambda: tf.identity(logit),
@@ -335,6 +333,7 @@ def main(unused_argv):
             train_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir, graph)
             validation_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/validation', graph)
 
+            # TODO: supports multi gpu - add scope ('tower%d' % gpu_idx)
             if FLAGS.pre_trained_checkpoint:
                 train_utils.restore_fn(FLAGS)
 

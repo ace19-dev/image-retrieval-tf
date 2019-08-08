@@ -8,7 +8,7 @@ from PIL import Image
 import tensorflow as tf
 
 from retrieval import retrieval_data, matching
-from utils import aug_utils
+from utils import aug_utils, train_utils
 import model
 import train_data
 
@@ -21,23 +21,43 @@ FLAGS = flags.FLAGS
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/materials',
+                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized',
                     'Where the dataset reside.')
 
 flags.DEFINE_string('output_dir',
                     '/home/ace19/dl_results/image_retrieve/_result',
                     'Where the dataset reside.')
 
-flags.DEFINE_string('checkpoint_path',
-                    '../tfmodels',
+flags.DEFINE_string('pre_trained_checkpoint',
+                    '../tfmodels/best.ckpt-5',
                     'Directory where to read training checkpoints.')
+flags.DEFINE_string('checkpoint_exclude_scopes',
+                    'ball/mean_vectors,ball/scale',
+                    # None,
+                    'Comma-separated list of scopes of variables to exclude '
+                    'when restoring from a checkpoint.')
+flags.DEFINE_string('checkpoint_model_scope',
+                    'tower0/resnet_v2_50',
+                    'Model scope in the checkpoint. None if the same as the trained model.')
+flags.DEFINE_string('model_name',
+                    'resnet_v2_50',
+                    'The name of the architecture to train.')
+flags.DEFINE_string('extra_model_name',
+                    'fc1',
+                    # None,
+                    'The name of the architecture to extra train.')
+flags.DEFINE_string('checkpoint_model_scope2',
+                    'tower0/fc1',
+                    'Model scope in the checkpoint. None if the same as the trained model.')
 
 flags.DEFINE_integer('batch_size', 32, 'batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
-# flags.DEFINE_string('labels',
-#                     'airplane,bed,bookshelf,toilet,vase',
-#                     'number of classes')
+flags.DEFINE_string('labels',
+                    'Black_grass,Charlock,Cleavers,Common_Chickweed,Common_wheat,Fat_Hen,'
+                    'Loose_Silky_bent,Maize,Scentless_Mayweed,Shepherds_Purse,'
+                    'Small_flowered_Cranesbill,Sugar_beet',
+                    'Labels to use')
 
 # # retrieval params
 # flags.DEFINE_float('max_cosine_distance', 0.2,
@@ -47,8 +67,11 @@ flags.DEFINE_integer('width', 224, 'width')
 #                     'If None, no budget is enforced.')
 
 
-GALLERY_SIZE = 43955
-QUERY_SIZE = 300
+# GALLERY_SIZE = 43955
+# QUERY_SIZE = 300
+
+GALLERY_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
+QUERY_SIZE = 60
 
 TOP_N = 5
 TEN_CROP = 10
@@ -142,11 +165,24 @@ def main(unused_argv):
                                             is_reuse=False,
                                             keep_prob=keep_prob,
                                             attention_module='se_block')
-    features = tf.cond(is_training,
-                       lambda: tf.identity(features),
-                       lambda: tf.reduce_mean(tf.reshape(features, [FLAGS.batch_size, TEN_CROP, -1]), axis=1))
 
-    # Prepare query source data
+    # Print name and shape of parameter nodes  (values not yet initialized)
+    tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+    tf.compat.v1.logging.info("Parameters")
+    tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+    for v in slim.get_model_variables():
+        tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+
+    # features = tf.cond(is_training,
+    #                    lambda: tf.identity(features),
+    #                    lambda: tf.reduce_mean(tf.reshape(features, [FLAGS.batch_size, TEN_CROP, -1]), axis=1))
+
+    # Create a saver object which will save all the variables
+    saver = tf.compat.v1.train.Saver()
+
+    ###############
+    # Prepare data
+    ###############
     tfrecord_filenames = tf.placeholder(tf.string, shape=[])
     gallery_dataset = train_data.Dataset(tfrecord_filenames,
                                        FLAGS.batch_size,
@@ -163,24 +199,28 @@ def main(unused_argv):
                                            num_classes,
                                            None,
                                            QUERY_SIZE,
-                                           256,  # 256 ~ 480
-                                           256)
+                                           FLAGS.height,
+                                           FLAGS.width)
+                                           # 256,  # 256 ~ 480
+                                           # 256)
     query_iterator = query_dataset.dataset.make_initializable_iterator()
     query_next_batch = query_iterator.get_next()
 
 
-
-    sess_config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
-    with tf.Session(config=sess_config) as sess:
+    sess_config = tf.compat.v1.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+    with tf.compat.v1.Session(config=sess_config) as sess:
         sess.run(tf.global_variables_initializer())
 
-        # Create a saver object which will save all the variables
-        saver = tf.train.Saver()
-        if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
-            checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
-        else:
-            checkpoint_path = FLAGS.checkpoint_path
-        saver.restore(sess, checkpoint_path)
+        # TODO: supports multi gpu - add scope ('tower%d' % gpu_idx)
+        if FLAGS.pre_trained_checkpoint:
+            train_utils.restore_fn(FLAGS)
+
+        # if FLAGS.pre_trained_checkpoint:
+        #     if tf.gfile.IsDirectory(FLAGS.pre_trained_checkpoint):
+        #         checkpoint_path = tf.train.latest_checkpoint(FLAGS.pre_trained_checkpoint)
+        #     else:
+        #         checkpoint_path = FLAGS.pre_trained_checkpoint
+        #     saver.restore(sess, checkpoint_path)
 
         # global_step = checkpoint_path.split('/')[-1].split('-')[-1]
 
@@ -208,7 +248,7 @@ def main(unused_argv):
 
             # (10,512)
             _f = sess.run(features, feed_dict={X: gallery_batch_xs,
-                                               is_training:True,
+                                               is_training:False,
                                                keep_prob: 1.0})
             gallery_features_list.extend(_f)
             gallery_path_list.extend(filenames)
@@ -221,13 +261,13 @@ def main(unused_argv):
             filenames, query_batch_xs, query_batch_ys  = sess.run(query_next_batch)
             # show_batch_data(filenames, query_batch_xs, query_batch_ys)
 
-            # TTA
-            batch_size, n_crops, c, h, w = query_batch_xs.shape
-            # fuse batch size and ncrops
-            tencrop_query_batch_xs = np.reshape(query_batch_xs, (-1, c, h, w))
+            # # TTA
+            # batch_size, n_crops, c, h, w = query_batch_xs.shape
+            # # fuse batch size and ncrops
+            # tencrop_query_batch_xs = np.reshape(query_batch_xs, (-1, c, h, w))
 
             # (10,512)
-            _f = sess.run(features, feed_dict={X: tencrop_query_batch_xs,
+            _f = sess.run(features, feed_dict={X: query_batch_xs,
                                                is_training:False,
                                                keep_prob: 1.0})
             query_features_list.extend(_f)

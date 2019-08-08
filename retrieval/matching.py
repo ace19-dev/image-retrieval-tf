@@ -126,7 +126,7 @@ class NearestNeighborDistanceMetric(object):
 
     """
 
-    def __init__(self, metric, matching_threshold, budget=None):
+    def __init__(self, metric, matching_threshold=None, budget=None):
 
 
         if metric == "euclidean":

@@ -342,7 +342,12 @@ def restore_fn(flags):
                                  flags.checkpoint_model_scope): var
              for var in variables_to_restore}
 
-    # supports multi gpu?
+    # # modify
+    # if flags.extra_model_name is not None:
+    #     for key, var in variables_to_restore.items():
+    #         if key.split('/')[0] == flags.extra_model_name:
+    #             key.replace(flags.extra_model_name, flags.checkpoint_model_scope2)
+
     slim.assign_from_checkpoint_fn(flags.pre_trained_checkpoint,
                                    variables_to_restore)
     tf.compat.v1.logging.info('Fine-tuning from %s. Ignoring missing vars: %s' %
