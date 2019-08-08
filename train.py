@@ -23,7 +23,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 # Multi GPU - Must be a value of 1 or greater
-flags.DEFINE_integer('num_gpu', 2, 'number of GPU')
+flags.DEFINE_integer('num_gpu', 4, 'number of GPU')
 
 flags.DEFINE_string('train_logdir', './tfmodels',
                     'Where the checkpoint and logs are stored.')
@@ -107,8 +107,8 @@ flags.DEFINE_string('dataset_dir',
 
 flags.DEFINE_integer('how_many_training_epochs', 100,
                      'How many training loops to run')
-flags.DEFINE_integer('batch_size', 128, 'batch size')
-flags.DEFINE_integer('val_batch_size', 128, 'validation batch size')
+flags.DEFINE_integer('batch_size', 320, 'batch size')
+flags.DEFINE_integer('val_batch_size', 320, 'validation batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
 # flags.DEFINE_string('labels',
@@ -219,7 +219,7 @@ def main(unused_argv):
                                                      is_reuse=False,
                                                      keep_prob=keep_prob,
                                                      attention_module='se_block')
-
+                # TTA
                 # logit = tf.cond(is_training,
                 #                 lambda: tf.identity(logit),
                 #                 lambda: tf.reduce_mean(tf.reshape(logit, [FLAGS.val_batch_size // FLAGS.num_gpu, TEN_CROP, -1]), axis=1))
@@ -417,7 +417,6 @@ def main(unused_argv):
                     # show_batch_data(filenames, augmented_val_batch_xs,
                     #                 validation_batch_ys, 'aug')
 
-                    # TODO: Verify TTA(TenCrop)
                     val_summary, val_loss, val_top1_acc, _confusion_matrix = sess.run(
                         [summary_op, loss, top1_acc, confusion_matrix],
                         feed_dict={
