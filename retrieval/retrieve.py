@@ -47,8 +47,8 @@ flags.DEFINE_integer('width', 224, 'width')
 #                     'If None, no budget is enforced.')
 
 
-MODELNET_GALLERY_SIZE = 43955
-MODELNET_QUERY_SIZE = 300
+GALLERY_SIZE = 43955
+QUERY_SIZE = 300
 
 TOP_N = 5
 TEN_CROP = 10
@@ -152,7 +152,7 @@ def main(unused_argv):
                                        FLAGS.batch_size,
                                        num_classes,
                                        None,
-                                       MODELNET_GALLERY_SIZE,
+                                       GALLERY_SIZE,
                                        FLAGS.height,
                                        FLAGS.width)
     gallery_iterator = gallery_dataset.dataset.make_initializable_iterator()
@@ -162,7 +162,7 @@ def main(unused_argv):
                                            FLAGS.batch_size,
                                            num_classes,
                                            None,
-                                           MODELNET_QUERY_SIZE,
+                                           QUERY_SIZE,
                                            256,  # 256 ~ 480
                                            256)
     query_iterator = query_dataset.dataset.make_initializable_iterator()
@@ -185,11 +185,11 @@ def main(unused_argv):
         # global_step = checkpoint_path.split('/')[-1].split('-')[-1]
 
         # Get the number of training/validation steps per epoch
-        batches_gallery = int(MODELNET_GALLERY_SIZE / FLAGS.batch_size)
-        if MODELNET_GALLERY_SIZE % FLAGS.batch_size > 0:
+        batches_gallery = int(GALLERY_SIZE / FLAGS.batch_size)
+        if GALLERY_SIZE % FLAGS.batch_size > 0:
             batches_gallery += 1
-        batches_query = int(MODELNET_QUERY_SIZE / FLAGS.batch_size)
-        if MODELNET_QUERY_SIZE % FLAGS.batch_size > 0:
+        batches_query = int(QUERY_SIZE / FLAGS.batch_size)
+        if QUERY_SIZE % FLAGS.batch_size > 0:
             batches_query += 1
 
         gallery_tf_filenames = os.path.join(FLAGS.dataset_dir, 'gallery.record')
