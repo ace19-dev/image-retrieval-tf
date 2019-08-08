@@ -95,7 +95,7 @@ class Dataset(object):
             images.append(image)
             if flip_mode == 0:
                 images.append(tf.image.random_flip_left_right(image))
-            if flip_mode == 1:
+            elif flip_mode == 1:
                 images.append(tf.image.random_flip_up_down(image))
 
         return filename, tf.stack(images), label
