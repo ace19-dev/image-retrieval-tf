@@ -32,7 +32,7 @@ class Dataset(object):
         # of the self.dataset.
         self.dataset = self.dataset.map(self.decode, num_parallel_calls=8)
         # self.dataset = self.dataset.map(self.augment, num_parallel_calls=8)
-        self.dataset = self.dataset.map(self.tencrop, num_parallel_calls=8)
+        # self.dataset = self.dataset.map(self.tencrop, num_parallel_calls=8)
         self.dataset = self.dataset.map(self.normalize, num_parallel_calls=8)
 
         # Prefetches a batch at a time to smooth out the time taken to load input
