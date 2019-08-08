@@ -41,7 +41,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.002,
+flags.DEFINE_float('base_learning_rate', 0.003,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
