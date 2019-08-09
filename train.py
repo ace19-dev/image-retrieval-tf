@@ -215,11 +215,11 @@ def main(unused_argv):
                                                      attention_module='se_block')
 
                 # # Print name and shape of parameter nodes  (values not yet initialized)
-                # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-                # tf.compat.v1.logging.info("Parameters")
-                # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-                # for v in slim.get_model_variables():
-                #     tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                tf.compat.v1.logging.info("Parameters")
+                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                for v in slim.get_model_variables():
+                    tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
                 # # TTA
                 # logit = tf.cond(is_training,
