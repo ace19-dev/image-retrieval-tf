@@ -175,7 +175,7 @@ def main(unused_argv):
     ###############
     # Prepare data
     ###############
-    tfrecord_filenames = tf.placeholder(tf.string, shape=[])
+    tfrecord_filenames = tf.compat.v1.placeholder(tf.string, shape=[])
     gallery_dataset = train_data.Dataset(tfrecord_filenames,
                                        FLAGS.batch_size,
                                        num_classes,
