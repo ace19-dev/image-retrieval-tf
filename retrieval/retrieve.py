@@ -21,7 +21,7 @@ FLAGS = flags.FLAGS
 
 # Dataset settings.
 flags.DEFINE_string('dataset_dir',
-                    '/home/ace19/dl_data/v2-plant-seedlings-dataset-resized',
+                    '/home/ace19/dl_data/materials',
                     'Where the dataset reside.')
 
 flags.DEFINE_string('output_dir',
@@ -37,8 +37,8 @@ flags.DEFINE_string('checkpoint_exclude_scopes',
                     'Comma-separated list of scopes of variables to exclude '
                     'when restoring from a checkpoint.')
 flags.DEFINE_string('checkpoint_model_scope',
-                    # 'tower0/resnet_v2_50',
-                    None,
+                    'tower0/',
+                    # None,
                     'Model scope in the checkpoint. None if the same as the trained model.')
 flags.DEFINE_string('model_name',
                     'resnet_v2_50',
@@ -60,11 +60,8 @@ flags.DEFINE_string('labels',
 #                     'If None, no budget is enforced.')
 
 
-# GALLERY_SIZE = 43955
-# QUERY_SIZE = 300
-
-GALLERY_SIZE = 263+384+285+606+215+457+648+219+516+233+490+393   # 4709
-QUERY_SIZE = 60
+GALLERY_SIZE = 43955
+QUERY_SIZE = 150
 
 TOP_N = 5
 TEN_CROP = 10
@@ -124,13 +121,15 @@ def match_n(top_n, galleries, queries):
 def show_retrieval_result(top_n_indice, top_n_distance, gallery_path_list, query_path_list):
     col = top_n_indice.shape[1]
     for row_idx, query_img_path in enumerate(query_path_list):
+        query_img_path = query_img_path.decode('utf-8')
+
         fig, axes = plt.subplots(ncols=6, figsize=(15, 4))
         # fig.suptitle(query_img_path.split('/')[-1], fontsize=12, fontweight='bold')
         axes[0].set_title(query_img_path.split('/')[-1], color='r', fontweight='bold')
         axes[0].imshow(Image.open(query_img_path))
 
         for i in range(col):
-            img_path = gallery_path_list[top_n_indice[row_idx, i]]
+            img_path = gallery_path_list[top_n_indice[row_idx, i]].decode('utf-8')
             axes[i+1].set_title(img_path.split('/')[-1])
             axes[i+1].imshow(Image.open(img_path))
         # plt.show()
@@ -200,9 +199,9 @@ def main(unused_argv):
     query_next_batch = query_iterator.get_next()
 
 
-    sess_config = tf.compat.v1.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+    sess_config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
     with tf.compat.v1.Session(config=sess_config) as sess:
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
 
         if FLAGS.checkpoint_dir:
             train_utils.custom_restore_fn(FLAGS)
@@ -271,7 +270,7 @@ def main(unused_argv):
 
         # matching
         top_n_indice, top_n_distance = \
-            match_n(TOP_N, tf.stack(gallery_features_list), tf.stack(query_features_list))
+            match_n(TOP_N, gallery_features_list, query_features_list)
 
         # Show n images from the gallery similar to the query image.
         show_retrieval_result(top_n_indice, top_n_distance, gallery_path_list, query_path_list)

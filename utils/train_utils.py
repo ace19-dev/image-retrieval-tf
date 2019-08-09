@@ -377,19 +377,18 @@ def custom_restore_fn(flags):
                 excluded = True
                 break
         if not excluded:
-            variables_to_restore.append('tower0/' + var)
+            variables_to_restore.append(var)
 
     # Change model scope if necessary.
     if flags.checkpoint_model_scope is not None:
         variables_to_restore = \
-            {var.op.name.replace(flags.model_name,
-                                 flags.checkpoint_model_scope): var
+            {var.op.name.replace(var.op.name,
+                                 flags.checkpoint_model_scope + var.op.name): var
              for var in variables_to_restore}
 
-    slim.assign_from_checkpoint_fn(flags.pre_trained_checkpoint,
+    slim.assign_from_checkpoint_fn(flags.checkpoint_dir,
                                    variables_to_restore)
-    tf.compat.v1.logging.info('Fine-tuning from %s. Ignoring missing vars: %s' %
-                    (flags.pre_trained_checkpoint, flags.ignore_missing_vars))
+    tf.compat.v1.logging.info('Fine-tuning from %s.' % flags.checkpoint_dir)
 
 
 def get_variables_to_train(flags):
