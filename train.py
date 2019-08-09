@@ -217,10 +217,10 @@ def main(unused_argv):
                 for v in slim.get_model_variables():
                     tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
-                # TTA
-                logit = tf.cond(is_training,
-                                lambda: tf.identity(logit),
-                                lambda: tf.reduce_mean(tf.reshape(logit, [FLAGS.val_batch_size // FLAGS.num_gpu, TEN_CROP, -1]), axis=1))
+                # # TTA
+                # logit = tf.cond(is_training,
+                #                 lambda: tf.identity(logit),
+                #                 lambda: tf.reduce_mean(tf.reshape(logit, [FLAGS.val_batch_size // FLAGS.num_gpu, TEN_CROP, -1]), axis=1))
                 logits.append(logit)
 
                 l = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ground_truth,
@@ -313,10 +313,10 @@ def main(unused_argv):
                                        num_classes,
                                        FLAGS.how_many_training_epochs,
                                        VALIDATE_DATA_SIZE,
-                                       # FLAGS.height,
-                                       # FLAGS.width)
-                                       256,  # 256 ~ 480
-                                       256)
+                                       FLAGS.height,
+                                       FLAGS.width)
+                                       # 256,  # 256 ~ 480
+                                       # 256)
         val_iterator = val_dataset.dataset.make_initializable_iterator()
         val_next_batch = val_iterator.get_next()
 
@@ -408,10 +408,10 @@ def main(unused_argv):
                 sess.run(val_iterator.initializer, feed_dict={tfrecord_filenames: validate_record_filenames})
                 for step in range(val_batches):
                     filenames, validation_batch_xs, validation_batch_ys = sess.run(val_next_batch)
-                    # TTA
-                    batch_size, n_crops, c, h, w = validation_batch_xs.shape
-                    # fuse batch size and ncrops
-                    tencrop_val_batch_xs = np.reshape(validation_batch_xs, (-1, c, h, w))
+                    # # TTA
+                    # batch_size, n_crops, c, h, w = validation_batch_xs.shape
+                    # # fuse batch size and ncrops
+                    # tencrop_val_batch_xs = np.reshape(validation_batch_xs, (-1, c, h, w))
                     # show_batch_data(filenames, tencrop_val_batch_xs, validation_batch_ys)
 
                     # augmented_val_batch_xs = aug_utils.aug(tencrop_val_batch_xs)
@@ -421,7 +421,7 @@ def main(unused_argv):
                     val_summary, val_loss, val_top1_acc, _confusion_matrix = sess.run(
                         [summary_op, loss, top1_acc, confusion_matrix],
                         feed_dict={
-                            X: tencrop_val_batch_xs,
+                            X: validation_batch_xs,
                             ground_truth: validation_batch_ys,
                             is_training: False,
                             keep_prob: 1.0

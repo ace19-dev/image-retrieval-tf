@@ -37,26 +37,26 @@ flags.DEFINE_string('checkpoint_exclude_scopes',
                     'Comma-separated list of scopes of variables to exclude '
                     'when restoring from a checkpoint.')
 flags.DEFINE_string('checkpoint_model_scope',
-                    'tower0/resnet_v2_50',
+                    # 'tower0/resnet_v2_50',
+                    None,
                     'Model scope in the checkpoint. None if the same as the trained model.')
 flags.DEFINE_string('model_name',
                     'resnet_v2_50',
                     'The name of the architecture to train.')
-flags.DEFINE_string('extra_model_name',
-                    'fc1',
-                    # None,
-                    'The name of the architecture to extra train.')
-flags.DEFINE_string('checkpoint_model_scope2',
-                    'tower0/fc1',
-                    'Model scope in the checkpoint. None if the same as the trained model.')
+# flags.DEFINE_string('extra_model_name',
+#                     'fc1',
+#                     # None,
+#                     'The name of the architecture to extra train.')
+# flags.DEFINE_string('checkpoint_model_scope2',
+#                     'tower0/fc1',
+#                     'Model scope in the checkpoint. None if the same as the trained model.')
 
-flags.DEFINE_integer('batch_size', 32, 'batch size')
+flags.DEFINE_integer('batch_size', 64, 'batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
 flags.DEFINE_string('labels',
-                    'Black_grass,Charlock,Cleavers,Common_Chickweed,Common_wheat,Fat_Hen,'
-                    'Loose_Silky_bent,Maize,Scentless_Mayweed,Shepherds_Purse,'
-                    'Small_flowered_Cranesbill,Sugar_beet',
+                    '01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,'
+                    '21,22,23,24,25,26,27,28,29,30',
                     'Labels to use')
 
 # # retrieval params
@@ -213,7 +213,7 @@ def main(unused_argv):
 
         # TODO: supports multi gpu - add scope ('tower%d' % gpu_idx)
         if FLAGS.pre_trained_checkpoint:
-            train_utils.restore_fn(FLAGS)
+            train_utils.custom_restore_fn(FLAGS)
 
         # if FLAGS.pre_trained_checkpoint:
         #     if tf.gfile.IsDirectory(FLAGS.pre_trained_checkpoint):
@@ -232,7 +232,7 @@ def main(unused_argv):
         if QUERY_SIZE % FLAGS.batch_size > 0:
             batches_query += 1
 
-        gallery_tf_filenames = os.path.join(FLAGS.dataset_dir, 'gallery.record')
+        gallery_tf_filenames = os.path.join(FLAGS.dataset_dir, 'train.record')
         query_tf_filenames = os.path.join(FLAGS.dataset_dir, 'query.record')
 
         # TODO: +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

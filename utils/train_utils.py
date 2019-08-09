@@ -354,6 +354,56 @@ def restore_fn(flags):
                     (flags.pre_trained_checkpoint, flags.ignore_missing_vars))
 
 
+def custom_restore_fn(flags):
+    """Returns a function run by the chief worker to warm-start the training.
+    Note that the init_fn is only run when initializing the model during the very
+    first global step.
+
+    """
+    # if flags.tf_initial_checkpoint is None:
+    #     return None
+    #
+    # Warn the user if a checkpoint exists in the train_dir. Then ignore.
+    # if tf.train.latest_checkpoint(flags.train_dir):
+    #     tf.compat.v1.logging.info(
+    #         'Ignoring --checkpoint_path because a checkpoint already exists in %s'
+    #         % flags.train_dir)
+    #     return None
+
+    exclusions = []
+    if flags.checkpoint_exclude_scopes:
+        exclusions = [scope.strip()
+                      for scope in flags.checkpoint_exclude_scopes.split(',')]
+
+    variables_to_restore = []
+    for var in slim.get_model_variables():
+        excluded = False
+        for exclusion in exclusions:
+            if var.op.name.startswith(exclusion):
+                excluded = True
+                break
+        if not excluded:
+            variables_to_restore.append(var)
+
+    # Change model scope if necessary.
+    if flags.checkpoint_model_scope is not None:
+        variables_to_restore = \
+            {var.op.name.replace(flags.model_name,
+                                 flags.checkpoint_model_scope): var
+             for var in variables_to_restore}
+
+    # # modify
+    # if flags.extra_model_name is not None:
+    #     for key, var in variables_to_restore.items():
+    #         if key.split('/')[0] == flags.extra_model_name:
+    #             key.replace(flags.extra_model_name, flags.checkpoint_model_scope2)
+
+    slim.assign_from_checkpoint_fn(flags.pre_trained_checkpoint,
+                                   variables_to_restore)
+    tf.compat.v1.logging.info('Fine-tuning from %s. Ignoring missing vars: %s' %
+                    (flags.pre_trained_checkpoint, flags.ignore_missing_vars))
+
+
 def get_variables_to_train(flags):
     """Returns a list of variables to train.
 

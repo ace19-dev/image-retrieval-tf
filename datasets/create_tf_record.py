@@ -18,10 +18,10 @@ flags.DEFINE_string('dataset_dir',
                     '/home/ace19/dl_data/materials',
                     'Root Directory to dataset.')
 flags.DEFINE_string('output_path',
-                    '/home/ace19/dl_data/materials/validation.record',
+                    '/home/ace19/dl_data/materials/query.record',
                     'Path to output TFRecord')
 flags.DEFINE_string('dataset_category',
-                    'validation',
+                    'query',
                     'dataset category, train|validation|test')
 
 FLAGS = flags.FLAGS
@@ -99,7 +99,7 @@ def main(_):
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
     options = tf.io.TFRecordOptions(tf.io.TFRecordCompressionType.GZIP)
-    # writer = tf.io.TFRecordWriter(FLAGS.output_path, options=options)
+    writer = tf.io.TFRecordWriter(FLAGS.output_path, options=options)
 
     # cls_lst = os.listdir(FLAGS.dataset_dir)
     dataset_lst = os.path.join(FLAGS.dataset_dir, FLAGS.dataset_category)
@@ -124,9 +124,9 @@ def main(_):
                 tf.compat.v1.logging.info('On image %d of %d', idx, total)
 
             tf_example = dict_to_tf_example(image, cls_path, label_map, FLAGS.dataset_category)
-            # writer.write(tf_example.SerializeToString())
+            writer.write(tf_example.SerializeToString())
 
-    # writer.close()
+    writer.close()
 
 
 if __name__ == '__main__':
