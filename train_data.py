@@ -94,14 +94,14 @@ class Dataset(object):
         color_ordering = random.randint(0, 1)
         if color_ordering == 0:
             image = tf.image.random_brightness(image, max_delta=32. / 255.)
-            image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
-            image = tf.image.random_hue(image, max_delta=0.2)
-            image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+            image = tf.image.random_saturation(image, lower=0.2, upper=1.2)
+            image = tf.image.random_hue(image, max_delta=0.1)
+            image = tf.image.random_contrast(image, lower=0.2, upper=1.2)
         elif color_ordering == 1:
             image = tf.image.random_brightness(image, max_delta=32. / 255.)
-            image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-            image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
-            image = tf.image.random_hue(image, max_delta=0.2)
+            image = tf.image.random_contrast(image, lower=0.2, upper=1.2)
+            image = tf.image.random_saturation(image, lower=0.2, upper=1.2)
+            image = tf.image.random_hue(image, max_delta=0.1)
 
         # The random_* ops do not necessarily clamp.
         image = tf.clip_by_value(image, 0.0, 1.0)

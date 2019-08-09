@@ -28,7 +28,7 @@ flags.DEFINE_string('output_dir',
                     '/home/ace19/dl_results/image_retrieve/_result',
                     'Where the dataset reside.')
 
-flags.DEFINE_string('pre_trained_checkpoint',
+flags.DEFINE_string('checkpoint_dir',
                     '../tfmodels/best.ckpt-5',
                     'Directory where to read training checkpoints.')
 flags.DEFINE_string('checkpoint_exclude_scopes',
@@ -43,13 +43,6 @@ flags.DEFINE_string('checkpoint_model_scope',
 flags.DEFINE_string('model_name',
                     'resnet_v2_50',
                     'The name of the architecture to train.')
-# flags.DEFINE_string('extra_model_name',
-#                     'fc1',
-#                     # None,
-#                     'The name of the architecture to extra train.')
-# flags.DEFINE_string('checkpoint_model_scope2',
-#                     'tower0/fc1',
-#                     'Model scope in the checkpoint. None if the same as the trained model.')
 
 flags.DEFINE_integer('batch_size', 64, 'batch size')
 flags.DEFINE_integer('height', 224, 'height')
@@ -211,15 +204,14 @@ def main(unused_argv):
     with tf.compat.v1.Session(config=sess_config) as sess:
         sess.run(tf.global_variables_initializer())
 
-        # TODO: supports multi gpu - add scope ('tower%d' % gpu_idx)
-        if FLAGS.pre_trained_checkpoint:
+        if FLAGS.checkpoint_dir:
             train_utils.custom_restore_fn(FLAGS)
 
-        # if FLAGS.pre_trained_checkpoint:
-        #     if tf.gfile.IsDirectory(FLAGS.pre_trained_checkpoint):
-        #         checkpoint_path = tf.train.latest_checkpoint(FLAGS.pre_trained_checkpoint)
+        # if FLAGS.checkpoint_dir:
+        #     if tf.gfile.IsDirectory(FLAGS.checkpoint_dir):
+        #         checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
         #     else:
-        #         checkpoint_path = FLAGS.pre_trained_checkpoint
+        #         checkpoint_path = FLAGS.checkpoint_dir
         #     saver.restore(sess, checkpoint_path)
 
         # global_step = checkpoint_path.split('/')[-1].split('-')[-1]

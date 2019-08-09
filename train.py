@@ -210,12 +210,12 @@ def main(unused_argv):
                                                      keep_prob=keep_prob,
                                                      attention_module='se_block')
 
-                # Print name and shape of parameter nodes  (values not yet initialized)
-                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-                tf.compat.v1.logging.info("Parameters")
-                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-                for v in slim.get_model_variables():
-                    tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+                # # Print name and shape of parameter nodes  (values not yet initialized)
+                # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                # tf.compat.v1.logging.info("Parameters")
+                # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                # for v in slim.get_model_variables():
+                #     tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
                 # # TTA
                 # logit = tf.cond(is_training,
@@ -333,7 +333,7 @@ def main(unused_argv):
             train_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir, graph)
             validation_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/validation', graph)
 
-            # TODO: supports multi gpu - add scope ('tower%d' % gpu_idx)
+            # TODO: supports multi gpu -> add scope ('tower%d' % gpu_idx)
             if FLAGS.pre_trained_checkpoint:
                 train_utils.restore_fn(FLAGS)
 
