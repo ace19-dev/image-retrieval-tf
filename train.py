@@ -23,7 +23,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 # Multi GPU - Must be a value of 1 or greater
-flags.DEFINE_integer('num_gpu', 4, 'number of GPU')
+flags.DEFINE_integer('num_gpu', 1, 'number of GPU')
 
 flags.DEFINE_string('train_logdir', './tfmodels',
                     'Where the checkpoint and logs are stored.')
@@ -41,7 +41,7 @@ flags.DEFINE_string('summaries_dir', './tfmodels/train_logs',
 
 flags.DEFINE_enum('learning_policy', 'poly', ['poly', 'step'],
                   'Learning rate policy for training.')
-flags.DEFINE_float('base_learning_rate', 0.002,
+flags.DEFINE_float('base_learning_rate', 0.0003,
                    'The base learning rate for model training.')
 flags.DEFINE_float('learning_rate_decay_factor', 1e-4,
                    'The rate to decay the base learning rate.')
@@ -103,8 +103,8 @@ flags.DEFINE_string('dataset_dir',
 
 flags.DEFINE_integer('how_many_training_epochs', 100,
                      'How many training loops to run')
-flags.DEFINE_integer('batch_size', 256, 'batch size')
-flags.DEFINE_integer('val_batch_size', 256, 'validation batch size')
+flags.DEFINE_integer('batch_size', 32, 'batch size')
+flags.DEFINE_integer('val_batch_size', 32, 'validation batch size')
 flags.DEFINE_integer('height', 224, 'height')
 flags.DEFINE_integer('width', 224, 'width')
 # flags.DEFINE_string('labels',
@@ -186,8 +186,12 @@ def main(unused_argv):
             FLAGS.slow_start_step, FLAGS.slow_start_learning_rate)
         summaries.add(tf.compat.v1.summary.scalar('learning_rate', learning_rate))
 
+        # optimizers = \
+        #     [tf.train.RMSPropOptimizer(learning_rate, decay=0.9, momentum=0.9) for _ in range(FLAGS.num_gpu)]
+        # optimizers = \
+        #     [tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum) for _ in range(FLAGS.num_gpu)]
         optimizers = \
-            [tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum) for _ in range(FLAGS.num_gpu)]
+            [tf.train.GradientDescentOptimizer(learning_rate) for _ in range(FLAGS.num_gpu)]
 
         logits = []
         losses = []
@@ -211,11 +215,11 @@ def main(unused_argv):
                                                      attention_module='se_block')
 
                 # # Print name and shape of parameter nodes  (values not yet initialized)
-                # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-                # tf.compat.v1.logging.info("Parameters")
-                # tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
-                # for v in slim.get_model_variables():
-                #     tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
+                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                tf.compat.v1.logging.info("Parameters")
+                tf.compat.v1.logging.info("++++++++++++++++++++++++++++++++++")
+                for v in slim.get_model_variables():
+                    tf.compat.v1.logging.info('name = %s, shape = %s' % (v.name, v.get_shape()))
 
                 # # TTA
                 # logit = tf.cond(is_training,

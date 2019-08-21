@@ -386,8 +386,7 @@ def custom_restore_fn(flags):
                                  flags.checkpoint_model_scope + var.op.name): var
              for var in variables_to_restore}
 
-    slim.assign_from_checkpoint_fn(flags.checkpoint_dir,
-                                   variables_to_restore)
+    slim.assign_from_checkpoint_fn(flags.checkpoint_dir, variables_to_restore)
     tf.compat.v1.logging.info('Fine-tuning from %s.' % flags.checkpoint_dir)
 
 
