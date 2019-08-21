@@ -327,7 +327,7 @@ def main(unused_argv):
 
         sess_config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
         with tf.compat.v1.Session(config = sess_config) as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
 
             # Add the summaries. These contain the summaries
             # created by model and either optimize() or _gather_loss().
