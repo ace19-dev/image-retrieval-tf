@@ -23,7 +23,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 # Multi GPU - Must be a value of 1 or greater
-flags.DEFINE_integer('num_gpu', 1, 'number of GPU')
+flags.DEFINE_integer('num_gpu', 4, 'number of GPU')
 
 flags.DEFINE_string('train_logdir', './tfmodels',
                     'Where the checkpoint and logs are stored.')
@@ -191,7 +191,7 @@ def main(unused_argv):
         # optimizers = \
         #     [tf.compat.v1.train.MomentumOptimizer(learning_rate, FLAGS.momentum) for _ in range(FLAGS.num_gpu)]
         optimizers = \
-            [tf.train.GradientDescentOptimizer(learning_rate) for _ in range(FLAGS.num_gpu)]
+            [tf.compat.v1.train.GradientDescentOptimizer(learning_rate) for _ in range(FLAGS.num_gpu)]
 
         logits = []
         losses = []
@@ -205,7 +205,8 @@ def main(unused_argv):
             gt_batch.append(ground_truth)
 
             scope_name = 'tower%d' % gpu_idx
-            with tf.device(tf.DeviceSpec(device_type="GPU", device_index=gpu_idx)), tf.variable_scope(scope_name):
+            with tf.device(tf.DeviceSpec(device_type="GPU", device_index=gpu_idx)), \
+                 tf.compat.v1.variable_scope(scope_name):
                 # apply SENet
                 _, logit = model.deep_cosine_softmax(X,
                                                      num_classes=num_classes,
@@ -268,7 +269,7 @@ def main(unused_argv):
         for idx, grad_and_vars in enumerate(grads):
             # apply_gradients may create variables. Make them LOCAL_VARIABLESZ¸¸¸¸¸¸
             with tf.name_scope('apply_gradients'), tf.device(tf.DeviceSpec(device_type="GPU", device_index=idx)):
-                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='tower%d' % idx)
+                update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS, scope='tower%d' % idx)
                 with tf.control_dependencies(update_ops):
                     train_ops.append(
                         optimizers[idx].apply_gradients(grad_and_vars, name='apply_grad_{}'.format(idx), global_step=global_step)

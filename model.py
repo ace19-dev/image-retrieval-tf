@@ -70,7 +70,7 @@ def deep_cosine_softmax(inputs,
                         scope=''):
 
     def batch_norm_fn(x):
-        return slim.batch_norm(x, scope=tf.get_variable_scope().name + "/bn")
+        return slim.batch_norm(x, scope=tf.compat.v1.get_variable_scope().name + "/bn")
 
     '''
     :param inputs: N x V x H x W x C tensor
