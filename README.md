@@ -13,6 +13,7 @@ The upper three row are correct retrieval and last row is incorrect retrieval.
 
 ## Feature
 - multi gpu
+- tta
 
 ## TODO
 - balanced sampling
