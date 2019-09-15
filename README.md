@@ -11,6 +11,9 @@ The upper three row are correct retrieval and last row is incorrect retrieval.
 ![](assets/1168_38.jpg)
 ![](assets/1596_38.jpg)
 
+## Feature
+- multi gpu
+
 ## TODO
 - balanced sampling
 
@@ -20,6 +23,7 @@ The upper three row are correct retrieval and last row is incorrect retrieval.
 
 ## References from 
 - https://arxiv.org/abs/1812.00442
+- https://github.com/ace19-dev/mvcnn-tf
 - https://github.com/kobiso/SENet-tensorflow-slim
 - https://github.com/vonclites/checkmate/blob/master/checkmate.py
 - https://github.com/tensorflow/models/blob/master/research/inception/inception/image_processing.py
