@@ -1,9 +1,10 @@
 # Image-Retrieval-tf
 - The leftmost is the query image. The remaining images are retrieved from gallery and ordered from left to right by similarity. 
-  - The bottom three rows are correct retrieval and last row is incorrect retrieval.
+  - correct retrieval
 ![](assets/127_46.jpg)
 ![](assets/4371_8.jpg)
 ![](assets/2362_27.jpg)
+  - incorrect retrieval.
 ![](assets/177_4.jpg)
 
 - It might also be retrieved in the same category elaborately.
